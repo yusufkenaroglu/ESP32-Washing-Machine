@@ -1,4 +1,4 @@
-# ESP32 Family Washing Machine Emulators (Modified Scale Models / Toys)
+# ESP32 Washing Machine (Modified Scale Models / Toys)
 
 This project is a firmware and hardware exploration that transforms **toy** and **scale model** washing machines into realistic, fully automatic replicas powered by **Espressif microcontrollers** and **FreeRTOS**.
 
