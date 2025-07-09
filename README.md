@@ -3,7 +3,7 @@
 This project is a firmware and hardware exploration that transforms **toy** and **scale model** washing machines into realistic, fully automatic replicas powered by **Espressif microcontrollers** and **FreeRTOS**.
 
 It aims to simulate real washing machine behavior, including:
-- Real-time cycle control (fill, wash, drain, spin)
+- Real-time cycle control (fill, wash, rinse, spin)
 - Auditory and visual cues/feedback
 - Modular FreeRTOS task-based architecture
 - Peripheral interaction with polling and interrupts
