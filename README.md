@@ -6,10 +6,13 @@ A FreeRTOS firmware for driving laundry appliances
 
 ## Trademark Disclaimer
 
-This project is an independent, non-commercial initiative that modifies **scale model** or **toy washing machines** for experimental purposes.
+This project is an independent, non-commercial initiative that modifies **scale model** and/or **toy washing machines** for experimental and hobby purposes.
 
-Logos, brand names, and trademarks (such as **LG** and **BOSCH**) that may appear on physical parts or digital assets are the property of their respective owners. These are used purely for **visual realism and brand recognition** in the context of small-scale replicas, and do not imply any endorsement or affiliation.
+Brand names and logos such as **LG** and **BOSCH** may appear in:
+- Display animations shown on attached screens
+- Physical labels from reused or salvaged parts
 
-No part of this project is intended for use in actual commercial or residential washing machines.
+All such trademarks are the property of their respective owners.  
+They are used here **solely for visual realism** and **do not imply any endorsement, affiliation, or sponsorship**.
 
-All trademarks are acknowledged and respected.
+This firmware is **not intended for use in real washing machines** and is provided as an open-source platform for hobbyist experimentation.
