@@ -34,8 +34,8 @@ Here are some clips showing different stages of the project:
 [![New 1300 RPM Direct Drive Motor (demo)](https://img.youtube.com/vi/g4-hl7QYWUM/hqdefault.jpg)](https://www.youtube.com/shorts/g4-hl7QYWUM)
 > Testing the maximal unloaded speed of a FOC BLDC motor
 
-[![Modified Bosch Toy Washing Machine – Pump Test](https://img.youtube.com/vi/PkpvrBWGcwY/hqdefault.jpg)](https://www.youtube.com/watch?v=PkpvrBWGcwY)
-> An earlier Bosch build that uses a peristaltic pump to act as both fill and drain pumps
+[![Bosch Modified Toy Washer Testing Displays, Sound, and Buttons](https://img.youtube.com/vi/Bnf9nRdDhQI/hqdefault.jpg)](https://www.youtube.com/watch?v=Bnf9nRdDhQI)
+> Testing the UI elements (Display, sound, capacitive buttons) of the modified Bosch toy
 
 More videos and technical breakdowns are available on my YouTube channel:  
 🔗 [@wishywasher1330](https://www.youtube.com/@wishywasher1330)
