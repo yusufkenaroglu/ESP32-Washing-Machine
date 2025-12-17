@@ -3,3 +3,4 @@ graphic_assets.h
 build/
 sdkconfig
 sdkconfig.old.vscode/
+.*
