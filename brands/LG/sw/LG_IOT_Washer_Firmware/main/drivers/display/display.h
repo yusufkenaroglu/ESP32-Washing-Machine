@@ -11,6 +11,12 @@
 #include <stdbool.h>
 #include "esp_err.h"
 
+/* Use `app_config.h` as the single source of truth for pin and geometry
+ * definitions so the display driver does not redefine hardware wiring or
+ * dimensions. If a consumer wants to override these, they can define the
+ * `DISPLAY_*` macros via compiler flags or in a higher-level header before
+ * including this file. */
+#include "app_config.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,21 +25,39 @@ extern "C" {
  * Display Configuration
  *===========================================================================*/
 
-// TFT display pins (ST7789 or ILI9341 compatible)
-#define DISPLAY_SPI_HOST    SPI2_HOST
-#define DISPLAY_PIN_MOSI    GPIO_NUM_23
-#define DISPLAY_PIN_SCLK    GPIO_NUM_18
-#define DISPLAY_PIN_CS      GPIO_NUM_5
-#define DISPLAY_PIN_DC      GPIO_NUM_2
-#define DISPLAY_PIN_RST     GPIO_NUM_4
-#define DISPLAY_PIN_BL      GPIO_NUM_19      // Backlight
+// Map legacy DISPLAY_* names to `app_config.h` `PIN_TFT_*` and `TFT_*` values
+// so existing display code keeps using `DISPLAY_*` while centralizing
+// configuration in `app_config.h`.
+#ifndef DISPLAY_SPI_HOST
+#define DISPLAY_SPI_HOST    TFT_SPI_HOST
+#endif
 
-// Display dimensions
+#ifndef DISPLAY_PIN_MOSI
+#define DISPLAY_PIN_MOSI    PIN_TFT_MOSI
+#endif
+#ifndef DISPLAY_PIN_SCLK
+#define DISPLAY_PIN_SCLK    PIN_TFT_SCLK
+#endif
+#ifndef DISPLAY_PIN_CS
+#define DISPLAY_PIN_CS      PIN_TFT_CS
+#endif
+#ifndef DISPLAY_PIN_DC
+#define DISPLAY_PIN_DC      PIN_TFT_DC
+#endif
+#ifndef DISPLAY_PIN_RST
+#define DISPLAY_PIN_RST     PIN_TFT_RST
+#endif
+#ifndef DISPLAY_PIN_BL
+#define DISPLAY_PIN_BL      PIN_TFT_BL
+#endif
+
+// Display dimensions: prefer values from `app_config.h`, fall back to
+// conservative defaults if not set.
 #ifndef DISPLAY_WIDTH
-#define DISPLAY_WIDTH       240
+#define DISPLAY_WIDTH       320
 #endif
 #ifndef DISPLAY_HEIGHT
-#define DISPLAY_HEIGHT      320
+#define DISPLAY_HEIGHT      240
 #endif
 
 /*===========================================================================

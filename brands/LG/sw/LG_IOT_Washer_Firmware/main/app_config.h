@@ -20,11 +20,12 @@ extern "C" {
 #endif
 
 /*===========================================================================
- * Feature Flags
+ * Feature Flags (via Kconfig/sdkconfig)
  *===========================================================================*/
-#define CONFIG_WIFI_ENABLED          true
-#define CONFIG_BALANCE_DETECTION     false
-#define CONFIG_SIMULATOR_MODE        false
+/* Feature toggles are provided by Kconfig and available from sdkconfig.h.
+ * Do not define CONFIG_* flags here to avoid divergence between build
+ * configuration and source-level assumptions. See main/Kconfig. */
+#include "sdkconfig.h"
 
 /*===========================================================================
  * GPIO Pin Definitions

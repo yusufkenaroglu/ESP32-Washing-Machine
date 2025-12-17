@@ -35,8 +35,8 @@
 
 static const char *TAG = "display";
 
-#define SPRITE_WIDTH 188
-#define SPRITE_HEIGHT 107
+// Sprite dimensions are defined in `app_config.h` (via SPRITE_WIDTH/
+// SPRITE_HEIGHT). Avoid duplicating values here.
 
 static uint16_t *s_sprite_buf = NULL;
 static uint16_t *s_prev_sprite_buf = NULL;

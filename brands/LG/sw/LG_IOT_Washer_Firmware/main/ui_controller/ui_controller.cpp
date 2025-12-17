@@ -1,5 +1,5 @@
 #include "ui_controller.h"
-
+#include "esp_log.h"
 #include "machine_state.h"
 #include "constants.h"
 #include "drivers/freehome/freehome_manager.h"
