@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LG Washer Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <!-- Load Ammo.js for Physics -->
+    <script src="https://cdn.jsdelivr.net/gh/kripken/ammo.js@HEAD/builds/ammo.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f0f0f0;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            margin: 0;
+        }
+
+        /* Realistic Panel Styling */
+        .machine-panel {
+            width: 1200px;
+            height: 230px;
+            background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 15%, #b0b0b0 100%);
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            display: flex;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 2px solid #888;
+        }
+
+        /* Left Section: Logo & Power */
+        .section-left {
+            width: 300px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .lg-logo {
+            font-weight: bold;
+            font-size: 24px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .lg-logo span {
+            color: #a50034;
+        }
+
+        /* LG Red */
+
+        .power-btn-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .hw-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #f0f0f0, #b0b0b0);
+            border: 2px solid #fff;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #555;
+            transition: transform 0.1s;
+        }
+
+        .hw-btn:active {
+            transform: scale(0.95);
+            background: radial-gradient(circle at 30% 30%, #d0d0d0, #909090);
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .hw-btn i {
+            pointer-events: none;
+        }
+
+        /* Center Section: Dial */
+        .section-center {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .dial-container {
+            position: relative;
+            width: 240px;
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .program-list {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .program-label {
+            position: absolute;
+            font-size: 10px;
+            font-weight: 500;
+            color: #444;
+            width: 80px;
+            text-align: center;
+        }
+
+        /* Positioning labels roughly around the circle */
+        .lbl-1 {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .lbl-2 {
+            top: 40px;
+            right: 10px;
+            text-align: left;
+        }
+
+        .lbl-3 {
+            top: 100px;
+            right: -10px;
+            text-align: left;
+        }
+
+        .lbl-4 {
+            bottom: 40px;
+            right: 10px;
+            text-align: left;
+        }
+
+        .lbl-5 {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .lbl-6 {
+            bottom: 40px;
+            left: 10px;
+            text-align: right;
+        }
+
+        .lbl-7 {
+            top: 100px;
+            left: -10px;
+            text-align: right;
+        }
+
+        .lbl-8 {
+            top: 40px;
+            left: 10px;
+            text-align: right;
+        }
+
+        .dial-knob {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #e0e0e0 0%, #silver 40%, #808080 100%);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            border: 4px solid #d0d0d0;
+            position: relative;
+            cursor: grab;
+        }
+
+        .dial-knob::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 15px;
+            background: #ff6b00;
+            border-radius: 2px;
+        }
+
+        .start-btn-pos {
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .power-btn-pos {
+            position: absolute;
+            right: 340px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Right Section: Display */
+        .section-right {
+            width: 300px;
+            height: 70%;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: linear-gradient(to bottom,
+                    black 70%,
+                    lightgray, black);
+            /* Dark glass area */
+            margin: 15px;
+            border-radius: 10px;
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .display-frame {
+            position: relative;
+        }
+
+        canvas {
+            background: #000;
+            width: 188px;
+            height: 107px;
+            transform: translateY(-20px);
+        }
+
+        /* Touch buttons simulation */
+        .touch-btn {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 2px 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .touch-btn:hover {
+            color: #fff;
+            border-color: #fff;
+        }
+
+        .tb-steam {
+            top: 10px;
+            left: -40px;
+        }
+
+        .tb-wash {
+            top: 50px;
+            left: -40px;
+        }
+
+        .tb-rinse {
+            top: 10px;
+            right: -40px;
+        }
+
+        .tb-spin {
+            top: 50px;
+            right: -40px;
+        }
+
+        /* Debug / Status Area */
+        .debug-panel {
+            width: 1000px;
+            background: #fff;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .debug-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .led {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            border: 1px solid #bbb;
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        .led.on {
+            background: #0f0;
+            box-shadow: 0 0 5px #0f0;
+            border-color: #0a0;
+        }
+
+        .led.blue.on {
+            background: #00f;
+            box-shadow: 0 0 5px #00f;
+            border-color: #00a;
+        }
+
+        .led.red.on {
+            background: #f00;
+            box-shadow: 0 0 5px #f00;
+            border-color: #a00;
+        }
+
+        .log {
+            width: 100%;
+            height: 150px;
+            background: #222;
+            color: #0f0;
+            font-family: monospace;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+
+        /* Drum Visuals - Inspired by aiibe/remotewasher */
+        .drum-visual-container {
+            width: 600px;
+            height: 600px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .drum-machine {
+            width: 275px;
+            height: 275px;
+            border-radius: 50%;
+            background-image: linear-gradient(90deg, #e2e6ec 0%, #e7e9f0 100%);
+            box-shadow: -5px -5px 20px 2px rgba(255, 255, 255, 0.8),
+                5px 5px 20px 0px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .drum-inside {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background-image: linear-gradient(90deg, #e2e6ec 0%, #e7e9f0 100%);
+            box-shadow: inset -5px -5px 10px 0px rgba(255, 255, 255, 0.8),
+                inset 5px 5px 10px 0px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .drum-spin {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            /* Simple pattern to represent the drum holes/texture */
+            background:
+                radial-gradient(circle at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.05) 61%),
+                repeating-conic-gradient(from 0deg, transparent 0deg, transparent 10deg, rgba(0, 0, 0, 0.03) 10deg, rgba(0, 0, 0, 0.03) 20deg);
+            position: relative;
+        }
+
+        /* Lifters inside the drum */
+        .drum-lifter {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50%;
+            height: 14px;
+            background: linear-gradient(to bottom, #ddd, #bbb);
+            border-radius: 7px;
+            transform-origin: 0% 50%;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .dl1 {
+            transform: rotate(0deg);
+        }
+
+        .dl2 {
+            transform: rotate(120deg);
+        }
+
+        .dl3 {
+            transform: rotate(240deg);
+        }
+
+        /* Glass reflection overlay */
+        .drum-glass {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.1) 20%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .drum-stats {
+            flex: 1;
+            min-width: 260px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .drum-stat {
+            background: #f8f8f8;
+            border-radius: 10px;
+            padding: 12px 16px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .drum-stat .label {
+            font-size: 11px;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: #7a7a7a;
+        }
+
+        .drum-stat .value {
+            display: block;
+            font-size: 22px;
+            font-weight: 600;
+            color: #2c2c2c;
+            margin-top: 6px;
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #333;
+            color: #fff;
+            padding: 5px 10px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Realistic Panel -->
+    <div class="machine-panel">
+        <!-- Left: Power & Branding -->
+        <div class="section-left">
+            <div class="lg-logo"><span>LG</span> Direct Drive</div>
+        </div>
+
+        <!-- Center: Dial & Start -->
+        <div class="section-center">
+            <div class="power-btn-pos">
+                <button id="btn-power" class="hw-btn" onmousedown="sendGpio(33, 1)" onmouseup="sendGpio(33, 0)"
+                    onmouseleave="sendGpio(33, 0)" title="Power">
+                    &#x23EF;
+                </button>
+                <div style="text-align: center; font-size: 12px; margin-top: 5px; color: #666;">POWER</div>
+            </div>
+            <div class="dial-container">
+                <div class="program-list">
+                    <div class="program-label lbl-1">Cotton/Normal</div>
+                    <div class="program-label lbl-2">Heavy Duty</div>
+                    <div class="program-label lbl-3">Bulky/Large</div>
+                    <div class="program-label lbl-4">Sanitary</div>
+                    <div class="program-label lbl-5">Allergiene</div>
+                    <div class="program-label lbl-6">Tub Clean</div>
+                    <div class="program-label lbl-7">Delicates</div>
+                    <div class="program-label lbl-8">Speed Wash</div>
+                </div>
+                <div class="dial-knob" title="Program Dial (Visual Only)"></div>
+            </div>
+
+            <div class="start-btn-pos">
+                <button id="btn-start" class="hw-btn" onmousedown="sendGpio(32, 1)" onmouseup="sendGpio(32, 0)"
+                    onmouseleave="sendGpio(32, 0)" title="Start/Pause">
+                    &#x23EF;
+                </button>
+                <div style="text-align: center; font-size: 12px; margin-top: 5px; color: #666;">START</div>
+            </div>
+        </div>
+
+        <!-- Right: Display -->
+        <div class="section-right">
+            <div class="display-frame">
+                <canvas id="tft" width="188" height="107"></canvas>
+
+                <!-- Fake Touch Buttons -->
+                <div class="touch-btn tb-steam">Steam</div>
+                <div class="touch-btn tb-wash">Wash</div>
+                <div class="touch-btn tb-rinse">Rinse</div>
+                <div class="touch-btn tb-spin">Spin</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug / Status Panel -->
+    <div class="debug-panel">
+        <h3>Simulator Controls & Status</h3>
+
+        <div class="debug-controls">
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                <input type="checkbox" onchange="sendGpio(34, this.checked ? 1 : 0)">
+                <strong>Door Sensor (Closed)</strong>
+            </label>
+
+            <div style="border-left: 1px solid #ccc; padding-left: 20px; display: flex; gap: 15px;">
+                <div>Start LED <div id="led-14" class="led"></div>
+                </div>
+                <div>Power LED <div id="led-26" class="led red"></div>
+                </div>
+                <div>Drum LED <div id="led-13" class="led"></div>
+                </div>
+                <div>Drain <div id="led-27" class="led blue"></div>
+                </div>
+                <div>Fill <div id="led-12" class="led blue"></div>
+                </div>
+                <div>Circ <div id="led-15" class="led blue"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="drum-panel">
+            <div class="drum-visual-container" id="drum-3d-container"
+                style="background: #333; overflow: hidden; position: relative;">
+                <div id="physics-controls"
+                    style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 1000;">
+                    <h4 style="margin: 0 0 10px 0;">Physics Debug</h4>
+
+                    <div style="margin-bottom: 10px;">
+                        <strong>Drum Position</strong><br>
+                        X: <input type="range" min="-20" max="20" step="0.1" id="drum-x" oninput="updateDrumPos()"><span
+                            id="val-drum-x">0</span><br>
+                        Y: <input type="range" min="-20" max="20" step="0.1" id="drum-y" oninput="updateDrumPos()"><span
+                            id="val-drum-y">0</span><br>
+                        Z: <input type="range" min="-20" max="20" step="0.1" id="drum-z" oninput="updateDrumPos()"><span
+                            id="val-drum-z">0</span>
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <strong>Cloth Start Pos</strong><br>
+                        X: <input type="range" min="-10" max="10" step="0.1" id="cloth-x"
+                            oninput="updateClothConfig()"><span id="val-cloth-x">0</span><br>
+                        Y: <input type="range" min="-10" max="20" step="0.1" id="cloth-y"
+                            oninput="updateClothConfig()"><span id="val-cloth-y">2</span><br>
+                        Z: <input type="range" min="-10" max="10" step="0.1" id="cloth-z"
+                            oninput="updateClothConfig()"><span id="val-cloth-z">0</span>
+                    </div>
+
+                    <button onclick="respawnCloth()">Respawn Cloth</button>
+                </div>
+                <!-- 3D Canvas will be injected here -->
+            </div>
+            <div class="drum-stats">
+                <div class="drum-stat">
+                    <span class="label">Target RPM</span>
+                    <span class="value" id="rpm-target">0 RPM</span>
+                </div>
+                <div class="drum-stat">
+                    <span class="label">Current RPM</span>
+                    <span class="value" id="rpm-current">0 RPM</span>
+                </div>
+                <div class="drum-stat">
+                    <span class="label">Direction</span>
+                    <span class="value" id="rpm-direction">Idle</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <div class="status-bar">
+        <span id="connectionStatus">Connecting...</span>
+        <span>ESP32 Washer Simulator</span>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.module.js",
+                "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.159.0/examples/jsm/controls/OrbitControls.js",
+                "three/examples/jsm/loaders/OBJLoader.js": "https://cdn.jsdelivr.net/npm/three@0.159.0/examples/jsm/loaders/OBJLoader.js"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+        import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+
+        const socket = io();
+        const canvas = document.getElementById('tft');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const logEl = document.getElementById('log');
+        const rpmTargetEl = document.getElementById('rpm-target');
+        const rpmCurrentEl = document.getElementById('rpm-current');
+        const rpmDirectionEl = document.getElementById('rpm-direction');
+
+        const motorTelemetry = {
+            target: 0,
+            current: 0,
+            direction: 0,
+        };
+
+        // Simulated RPM with inertia
+        let currentSimulatedRPM = 0;
+        const RPM_ACCEL = 60; // RPM per second acceleration/deceleration
+
+        function updateMotorStats() {
+            if (rpmTargetEl) {
+                rpmTargetEl.textContent = `${Math.round(motorTelemetry.target)} RPM`;
+            }
+            if (rpmCurrentEl) {
+                rpmCurrentEl.textContent = `${Math.round(motorTelemetry.current)} RPM`;
+            }
+            if (rpmDirectionEl) {
+                let label = 'Idle';
+                if (motorTelemetry.current > 1) {
+                    label = motorTelemetry.direction ? 'Counter-clockwise' : 'Clockwise';
+                }
+                rpmDirectionEl.textContent = label;
+            }
+        }
+
+        let drumAngle = 0;
+        let lastTime = performance.now();
+        let drumMesh = null;
+        let clothMesh = null;
+        let renderer, scene, camera, controls;
+
+        // Physics Variables
+        let physicsWorld;
+        let transformAux1;
+        let softBodySolver;
+        let clothSoftBody;
+        let drumBody;
+        let ammoLoaded = false;
+
+        // Cloth Config
+        const clothWidth = 10;
+        const clothHeight = 10;
+        const clothRes = 15;
+
+        let clothStartPos = { x: 0, y: 20, z: 0 };
+
+        function updateDrumPos() {
+            if (!drumMesh || !drumBody) return;
+
+            const x = parseFloat(document.getElementById('drum-x').value);
+            const y = parseFloat(document.getElementById('drum-y').value);
+            const z = parseFloat(document.getElementById('drum-z').value);
+
+            document.getElementById('val-drum-x').textContent = x.toFixed(1);
+            document.getElementById('val-drum-y').textContent = y.toFixed(1);
+            document.getElementById('val-drum-z').textContent = z.toFixed(1);
+
+            drumMesh.position.set(x, y, z);
+
+            // Update Physics Body
+            const transform = drumBody.getWorldTransform();
+            transform.setOrigin(new Ammo.btVector3(x, y, z));
+            drumBody.setWorldTransform(transform);
+
+            // Update AABB
+            physicsWorld.updateSingleAabb(drumBody);
+        }
+
+        function updateClothConfig() {
+            clothStartPos.x = parseFloat(document.getElementById('cloth-x').value);
+            clothStartPos.y = parseFloat(document.getElementById('cloth-y').value);
+            clothStartPos.z = parseFloat(document.getElementById('cloth-z').value);
+
+            document.getElementById('val-cloth-x').textContent = clothStartPos.x.toFixed(1);
+            document.getElementById('val-cloth-y').textContent = clothStartPos.y.toFixed(1);
+            document.getElementById('val-cloth-z').textContent = clothStartPos.z.toFixed(1);
+        }
+
+        function respawnCloth() {
+            if (!physicsWorld || !scene) return;
+
+            // Remove existing cloth
+            if (clothSoftBody) {
+                physicsWorld.removeSoftBody(clothSoftBody);
+                Ammo.destroy(clothSoftBody);
+                clothSoftBody = null;
+            }
+
+            if (clothMesh) {
+                scene.remove(clothMesh);
+                clothMesh.geometry.dispose();
+                clothMesh.material.dispose();
+                clothMesh = null;
+            }
+
+            createClothPhysics();
+        }
+
+        // Expose functions to window
+        window.updateDrumPos = updateDrumPos;
+        window.updateClothConfig = updateClothConfig;
+        window.respawnCloth = respawnCloth;
+
+        function initPhysics() {
+            // Physics configuration
+            const collisionConfiguration = new Ammo.btSoftBodyRigidBodyCollisionConfiguration();
+            const dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
+            const broadphase = new Ammo.btDbvtBroadphase();
+            const solver = new Ammo.btSequentialImpulseConstraintSolver();
+            softBodySolver = new Ammo.btDefaultSoftBodySolver();
+
+            physicsWorld = new Ammo.btSoftRigidDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration, softBodySolver);
+            physicsWorld.setGravity(new Ammo.btVector3(0, -98, 0)); // Scaled gravity
+            physicsWorld.getWorldInfo().set_m_gravity(new Ammo.btVector3(0, -98, 0));
+
+            transformAux1 = new Ammo.btTransform();
+            ammoLoaded = true;
+        }
+
+        function createDrumPhysics(mesh, scale) {
+            // 1. Calculate Bounding Box (World Space)
+            const box = new THREE.Box3().setFromObject(mesh);
+            const size = box.getSize(new THREE.Vector3());
+            
+            console.log(`Drum Box Collider: ${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)}`);
+
+            // 2. Create Visual Debug Cube (Child of Drum Mesh)
+            // Since the drum mesh is scaled, we need to divide the geometry size by the scale
+            // so that when it's added to the scaled mesh, it appears the correct size.
+            const geomSize = size.clone().divideScalar(scale);
+            const geometry = new THREE.BoxGeometry(geomSize.x, geomSize.y, geomSize.z, 16, 16, 16);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0x00ff00, 
+                wireframe: true, 
+                transparent: true, 
+                opacity: 0.3 
+            });
+            const debugMesh = new THREE.Mesh(geometry, material);
+            mesh.add(debugMesh);
+
+            // 3. Create Ammo Physics Body (Box Shape)
+            // Physics shapes are defined in world units (unscaled by the rigid body transform usually)
+            const shape = new Ammo.btBoxShape(new Ammo.btVector3(size.x * 0.5, size.y * 0.5, size.z * 0.5));
+            shape.setMargin(0.5);
+
+            const transform = new Ammo.btTransform();
+            transform.setIdentity();
+            transform.setOrigin(new Ammo.btVector3(mesh.position.x, mesh.position.y, mesh.position.z));
+            const quat = mesh.quaternion;
+            transform.setRotation(new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w));
+
+            const motionState = new Ammo.btDefaultMotionState(transform);
+            const localInertia = new Ammo.btVector3(0, 0, 0);
+
+            const rbInfo = new Ammo.btRigidBodyConstructionInfo(0, motionState, shape, localInertia);
+            drumBody = new Ammo.btRigidBody(rbInfo);
+
+            //drumBody.setCollisionFlags(2); // CF_KINEMATIC_OBJECT
+            //drumBody.setActivationState(4); // DISABLE_DEACTIVATION
+
+            physicsWorld.addRigidBody(drumBody);
+        }
+
+        function createClothPhysics() {
+            // Position cloth inside the drum. 
+            const clothPos = new THREE.Vector3(clothStartPos.x, clothStartPos.y, clothStartPos.z);
+
+            // Create Soft Body
+            const softBodyHelpers = new Ammo.btSoftBodyHelpers();
+            // Rotate 90 degrees to be horizontal (XZ plane)
+            const corner00 = new Ammo.btVector3(clothPos.x - clothWidth / 2, clothPos.y, clothPos.z - clothHeight / 2);
+            const corner10 = new Ammo.btVector3(clothPos.x + clothWidth / 2, clothPos.y, clothPos.z - clothHeight / 2);
+            const corner01 = new Ammo.btVector3(clothPos.x - clothWidth / 2, clothPos.y, clothPos.z + clothHeight / 2);
+            const corner11 = new Ammo.btVector3(clothPos.x + clothWidth / 2, clothPos.y, clothPos.z + clothHeight / 2);
+
+            clothSoftBody = softBodyHelpers.CreatePatch(
+                physicsWorld.getWorldInfo(),
+                corner00, corner10, corner01, corner11,
+                clothRes, clothRes,
+                0, true // 0 = fixed corners (none), true = randomize constraints
+            );
+
+            // Config
+            const sbConfig = clothSoftBody.get_m_cfg();
+            sbConfig.set_viterations( 10 );
+            sbConfig.set_piterations( 10 );
+            sbConfig.set_kDF( 0.1 );
+            sbConfig.set_kDP( 0.01 );
+            // Enable collisions: SDF_RS (0x0001) | VF_SS (0x0010) = 0x11
+            sbConfig.set_collisions( 0x11 );
+
+            // Material
+            const sbMaterial = clothSoftBody.get_m_materials().at( 0 );
+            sbMaterial.set_m_kLST( 0.9 );
+            sbMaterial.set_m_kAST( 0.9 );
+
+            clothSoftBody.generateBendingConstraints( 2, sbMaterial );
+
+            clothSoftBody.setTotalMass( 0.5, false );
+            
+            // Critical: Set margin on the collision shape
+            Ammo.castObject( clothSoftBody, Ammo.btCollisionObject ).getCollisionShape().setMargin( 0.5 );
+
+            physicsWorld.addSoftBody( clothSoftBody, 1, -1 );
+
+            // Create Three.js Mesh for Cloth
+            const geometry = new THREE.PlaneGeometry(clothWidth, clothHeight, clothRes - 1, clothRes - 1);
+            geometry.rotateX(-Math.PI / 2); // Rotate to be horizontal
+            geometry.translate(clothPos.x, clothPos.y, clothPos.z); // Match physics position
+
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xff0000,
+                side: THREE.DoubleSide,
+                roughness: 0.5,
+                metalness: 0.1
+            });
+
+            clothMesh = new THREE.Mesh(geometry, material);
+            scene.add(clothMesh);
+        }
+
+        function updateClothMesh() {
+            if (!clothSoftBody || !clothMesh) return;
+
+            const geometry = clothMesh.geometry;
+            const positions = geometry.attributes.position.array;
+            const nodes = clothSoftBody.get_m_nodes();
+
+            for (let i = 0; i < nodes.size(); i++) {
+                const node = nodes.at(i);
+                const pos = node.get_m_x();
+                positions[i * 3] = pos.x();
+                positions[i * 3 + 1] = pos.y();
+                positions[i * 3 + 2] = pos.z();
+            }
+
+            geometry.attributes.position.needsUpdate = true;
+            geometry.computeVertexNormals();
+        }
+
+        function createGround() {
+            const pos = { x: 0, y: -20, z: 0 };
+            const scale = { x: 50, y: 2, z: 50 };
+            const quat = { x: 0, y: 0, z: 0, w: 1 };
+            const mass = 0; // 0 = static
+
+            // Three.js
+            const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+            const material = new THREE.MeshStandardMaterial({ color: 0x666666 });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(pos.x, pos.y, pos.z);
+            scene.add(mesh);
+
+            // Ammo.js
+            const transform = new Ammo.btTransform();
+            transform.setIdentity();
+            transform.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
+            transform.setRotation(new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w));
+            const motionState = new Ammo.btDefaultMotionState(transform);
+
+            const colShape = new Ammo.btBoxShape(new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+            colShape.setMargin(0.05);
+
+            const localInertia = new Ammo.btVector3(0, 0, 0);
+            const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, colShape, localInertia);
+            const body = new Ammo.btRigidBody(rbInfo);
+
+            physicsWorld.addRigidBody(body);
+        }
+
+        function createBall() {
+            const radius = 4;
+            const pos = { x: 0, y: -15, z: 0 }; // Sit on ground (ground top is -19)
+            const mass = 0; // Static
+
+            // Three.js
+            const geometry = new THREE.SphereGeometry(radius, 32, 32);
+            const material = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(pos.x, pos.y, pos.z);
+            scene.add(mesh);
+
+            // Ammo.js
+            const transform = new Ammo.btTransform();
+            transform.setIdentity();
+            transform.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
+            const motionState = new Ammo.btDefaultMotionState(transform);
+
+            const colShape = new Ammo.btSphereShape(radius);
+            colShape.setMargin(0.05);
+
+            const localInertia = new Ammo.btVector3(0, 0, 0);
+            const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, colShape, localInertia);
+            const body = new Ammo.btRigidBody(rbInfo);
+
+            physicsWorld.addRigidBody(body);
+        }
+
+        function init3D() {
+            const container = document.getElementById('drum-3d-container');
+            if (!container) return;
+
+            const width = container.clientWidth || 275;
+            const height = container.clientHeight || 275;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xe0e0e0); // Light grey background
+
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+            camera.position.set(0, 0, 40); // Adjust based on model size
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            container.appendChild(renderer.domElement);
+
+            // Add OrbitControls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 30);
+            scene.add(dirLight);
+
+            // Initialize Ammo
+            Ammo().then(function (AmmoLib) {
+                initPhysics();
+                createGround();
+                createBall();
+                const loader = new OBJLoader();
+                loader.load(
+                    '/assets/drum.obj',
+                    function (object) {
+                        drumMesh = object;
+
+                        // Apply material to all children
+                        const material = new THREE.MeshStandardMaterial({
+                            color: 0x888888,
+                            metalness: 1,
+                            roughness: 0.2,
+                            side: THREE.DoubleSide,
+                            transparent: true,
+                            opacity: 0.3 // Make drum transparent to see cloth
+                        });
+
+                        drumMesh.traverse(function (child) {
+                            if (child.isMesh) {
+                                child.material = material;
+                            }
+                        });
+
+                        // Center the geometry
+                        const box = new THREE.Box3().setFromObject(drumMesh);
+                        const center = box.getCenter(new THREE.Vector3());
+                        drumMesh.position.sub(center);
+
+                        // Auto-scale to fit camera view roughly
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        let scale = 1.0;
+                        if (maxDim > 0) {
+                            scale = 25 / maxDim; // Target size around 25 units
+                            drumMesh.scale.set(scale, scale, scale);
+                        }
+
+                        // Rotate to face camera if needed (often models are Y-up or Z-up)
+                        //drumMesh.rotation.x = Math.PI / 8; 
+
+                        scene.add(drumMesh);
+                        console.log("Drum OBJ loaded and added to scene");
+
+                        // Init Debug Controls
+                        document.getElementById('drum-x').value = drumMesh.position.x;
+                        document.getElementById('drum-y').value = drumMesh.position.y;
+                        document.getElementById('drum-z').value = drumMesh.position.z;
+                        document.getElementById('val-drum-x').textContent = drumMesh.position.x.toFixed(1);
+                        document.getElementById('val-drum-y').textContent = drumMesh.position.y.toFixed(1);
+                        document.getElementById('val-drum-z').textContent = drumMesh.position.z.toFixed(1);
+
+                        document.getElementById('cloth-x').value = clothStartPos.x;
+                        document.getElementById('cloth-y').value = clothStartPos.y;
+                        document.getElementById('cloth-z').value = clothStartPos.z;
+                        document.getElementById('val-cloth-x').textContent = clothStartPos.x.toFixed(1);
+                        document.getElementById('val-cloth-y').textContent = clothStartPos.y.toFixed(1);
+                        document.getElementById('val-cloth-z').textContent = clothStartPos.z.toFixed(1);
+
+                        // Create Physics for Drum
+                        createDrumPhysics(drumMesh, scale);
+
+                        // Create Cloth
+                        createClothPhysics();
+                    },
+                    function (xhr) {
+                        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                    },
+                    function (error) {
+                        console.error('An error happened loading the OBJ', error);
+                    }
+                );
+            });
+        }
+
+        function animateDrum(time) {
+            const dt = (time - lastTime) / 1000; // seconds
+            lastTime = time;
+
+            // Inertia Simulation
+            const targetRPM = motorTelemetry.current;
+            
+            if (currentSimulatedRPM < targetRPM) {
+                currentSimulatedRPM += RPM_ACCEL * dt;
+                if (currentSimulatedRPM > targetRPM) currentSimulatedRPM = targetRPM;
+            } else if (currentSimulatedRPM > targetRPM) {
+                currentSimulatedRPM -= RPM_ACCEL * dt;
+                if (currentSimulatedRPM < targetRPM) currentSimulatedRPM = targetRPM;
+            }
+
+            // RPM / 60 = RPS
+            // RPS * 360 = degrees per second
+            const rps = currentSimulatedRPM / 60;
+            const degPerSec = rps * 360;
+
+            // Direction: 0 = Clockwise, 1 = CCW
+            const dirMultiplier = motorTelemetry.direction ? -1 : 1;
+
+            const change = degPerSec * dt * dirMultiplier;
+            drumAngle += change;
+
+            // Update Physics
+            if (ammoLoaded && physicsWorld) {
+                physicsWorld.stepSimulation(dt, 10);
+
+                // Sync Cloth
+                updateClothMesh();
+
+                // Sync Drum Rotation (Kinematic)
+                if (drumBody && drumMesh) {
+                    // Update visual rotation
+                    drumMesh.rotation.z = THREE.MathUtils.degToRad(drumAngle);
+
+                    // Update physics rotation
+                    const transform = transformAux1;
+
+                    // Get current transform to keep position
+                    const motionState = drumBody.getMotionState();
+                    motionState.getWorldTransform(transform);
+
+                    // Set rotation based on drumAngle
+                    const q = new Ammo.btQuaternion();
+                    const meshQuat = drumMesh.quaternion;
+                    q.setValue(meshQuat.x, meshQuat.y, meshQuat.z, meshQuat.w);
+
+                    transform.setRotation(q);
+
+                    // Apply to both MotionState and Body
+                    motionState.setWorldTransform(transform);
+                    drumBody.setWorldTransform(transform);
+                }
+            }
+
+            if (renderer && scene && camera) {
+                if (controls) controls.update();
+                renderer.render(scene, camera);
+            }
+
+            requestAnimationFrame(animateDrum);
+        }
+
+        // Start 3D init
+        init3D();
+        requestAnimationFrame(animateDrum);
+
+
+        // Center the 188x107 display on the 320x240 canvas
+
+        // Initialize canvas
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, 320, 240);
+
+        socket.on('connect', () => {
+            document.getElementById('connectionStatus').textContent = 'Connected to Host';
+            document.getElementById('connectionStatus').style.color = '#0f0';
+        });
+
+        socket.on('draw_rect', (data) => {
+            // Convert RGB565 to RGB888
+            const color565 = data.c;
+            const r = (color565 >> 11) * 255 / 31;
+            const g = ((color565 >> 5) & 0x3F) * 255 / 63;
+            const b = (color565 & 0x1F) * 255 / 31;
+
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.fillRect(data.x, data.y, data.w, data.h);
+        });
+
+        socket.on('draw_bitmap', (data) => {
+            const w = data.w;
+            const h = data.h;
+            const hex = data.data;
+            const imgData = ctx.createImageData(w, h);
+            const pixels = imgData.data;
+
+            for (let i = 0; i < w * h; i++) {
+                // Parse 4 hex chars (16-bit color)
+                const val = parseInt(hex.substr(i * 4, 4), 16);
+
+                // RGB565 to RGB888
+                const r = (val >> 11) * 255 / 31;
+                const g = ((val >> 5) & 0x3F) * 255 / 63;
+                const b = (val & 0x1F) * 255 / 31;
+
+                const idx = i * 4;
+                pixels[idx] = r;
+                pixels[idx + 1] = g;
+                pixels[idx + 2] = b;
+                pixels[idx + 3] = 255; // Alpha
+            }
+
+            ctx.putImageData(imgData, data.x - 27, data.y - 5);
+        });
+
+        socket.on('gpio_update', (data) => {
+            const el = document.getElementById(`led-${data.p}`);
+            if (el) {
+                if (data.v > 0) el.classList.add('on');
+                else el.classList.remove('on');
+            }
+        });
+
+        socket.on('motor_state', (data) => {
+            if (!data) {
+                return;
+            }
+            motorTelemetry.target = Number(data.target) || 0;
+            motorTelemetry.current = Number(data.current) || 0;
+            motorTelemetry.direction = Number(data.direction) ? 1 : 0;
+            updateMotorStats();
+        });
+
+        socket.on('log', (data) => {
+            const div = document.createElement('div');
+            div.textContent = data.msg;
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+        });
+
+        function sendGpio(pin, val) {
+            socket.emit('gpio_input', { pin: pin, val: val });
+        }
+        window.sendGpio = sendGpio;
+    </script>
+</body>
+
+</html>

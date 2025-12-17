@@ -1,0 +1,25 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.espIdfPath": "/Users/iambonk/esp/v5.5.1/esp-idf",
+  "idf.pythonInstallPath": "/opt/homebrew/bin/python3",
+  "idf.openOcdConfigs": [
+    "board/esp32-bridge.cfg"
+  ],
+  "idf.port": "/dev/tty.usbserial-10",
+  "idf.toolsPath": "/Users/iambonk/.espressif",
+  "idf.customExtraVars": {
+    "OPENOCD_SCRIPTS": "/Users/iambonk/.espressif/tools/openocd-esp32/v0.12.0-esp32-20230921/openocd-esp32/share/openocd/scripts",
+    "ESP_ROM_ELF_DIR": "/Users/iambonk/.espressif/tools/esp-rom-elfs/20230320/",
+    "IDF_TARGET": "esp32"
+  },
+  "clangd.path": "/Users/iambonk/.espressif/tools/esp-clang/esp-19.1.2_20250312/esp-clang/bin/clangd",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=/Users/iambonk/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc",
+    "--compile-commands-dir=/Users/iambonk/Developer/ESP32-Washing-Machine/brands/LG/sw/LG_IOT_Washer_Firmware/build"
+  ],
+  "idf.flashType": "UART",
+  "files.readonlyInclude": {
+    "{**/.c4z/.extsrcs/*.PROTSYM.cbl,**/.c4z/.extsrcs/*.PROTSYM.listing}": true
+  }
+}

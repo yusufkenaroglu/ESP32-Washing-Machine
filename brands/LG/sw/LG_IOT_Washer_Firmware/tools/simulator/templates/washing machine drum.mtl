@@ -1,0 +1,43 @@
+# MTL file - created by a modified js OBJExporter
+
+newmtl Silver
+Tr 0.0000
+Tf 1.0000 1.0000 1.0000
+illum 1
+Pr 1
+Pds 1
+Pl 1
+Pccns 1-1
+Prfl 0.8999999761581422
+Pior 2.124999953433872
+Pshc 0 0 0
+Pshr 1
+Psi 1
+Psc 1 1 1
+Ka 1 1 1
+Kd 0.09411764705882353 0.09411764705882353 0.09411764705882353
+Ke 0 0 0
+
+newmtl line_material_0
+Tr 0.0000
+Tf 1.0000 1.0000 1.0000
+illum 1
+Ka 1 1 1
+Kd 0 0 0
+Ke 0 0 0
+
+newmtl line_material_2
+Tr 0.0000
+Tf 1.0000 1.0000 1.0000
+illum 1
+Ka 1 1 1
+Kd 0 0 1
+Ke 0 0 0
+
+newmtl points_material_0
+Tr 0.0000
+Tf 1.0000 1.0000 1.0000
+illum 1
+Ka 1 1 1
+Kd 1 1 1
+Ke 0 0 0

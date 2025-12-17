@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LG Washer Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f0f0f0;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            margin: 0;
+        }
+
+        /* Realistic Panel Styling */
+        .machine-panel {
+            width: 1200px;
+            height: 230px;
+            background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 15%, #b0b0b0 100%);
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            display: flex;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 2px solid #888;
+        }
+
+        /* Left Section: Logo & Power */
+        .section-left {
+            width: 300px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .lg-logo {
+            font-weight: bold;
+            font-size: 24px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .lg-logo span {
+            color: #a50034;
+        }
+
+        /* LG Red */
+
+        .power-btn-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .hw-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #f0f0f0, #b0b0b0);
+            border: 2px solid #fff;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #555;
+            transition: transform 0.1s;
+        }
+
+        .hw-btn:active {
+            transform: scale(0.95);
+            background: radial-gradient(circle at 30% 30%, #d0d0d0, #909090);
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .hw-btn i {
+            pointer-events: none;
+        }
+
+        /* Center Section: Dial */
+        .section-center {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .dial-container {
+            position: relative;
+            width: 240px;
+            height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .program-list {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .program-label {
+            position: absolute;
+            font-size: 10px;
+            font-weight: 500;
+            color: #444;
+            width: 80px;
+            text-align: center;
+        }
+
+        /* Positioning labels roughly around the circle */
+        .lbl-1 {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .lbl-2 {
+            top: 40px;
+            right: 10px;
+            text-align: left;
+        }
+
+        .lbl-3 {
+            top: 100px;
+            right: -10px;
+            text-align: left;
+        }
+
+        .lbl-4 {
+            bottom: 40px;
+            right: 10px;
+            text-align: left;
+        }
+
+        .lbl-5 {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .lbl-6 {
+            bottom: 40px;
+            left: 10px;
+            text-align: right;
+        }
+
+        .lbl-7 {
+            top: 100px;
+            left: -10px;
+            text-align: right;
+        }
+
+        .lbl-8 {
+            top: 40px;
+            left: 10px;
+            text-align: right;
+        }
+
+        .dial-knob {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #e0e0e0 0%, #silver 40%, #808080 100%);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            border: 4px solid #d0d0d0;
+            position: relative;
+            cursor: grab;
+        }
+
+        .dial-knob::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 15px;
+            background: #ff6b00;
+            border-radius: 2px;
+        }
+
+        .start-btn-pos {
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .power-btn-pos {
+            position: absolute;
+            right: 340px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Right Section: Display */
+        .section-right {
+            width: 300px;
+            height: 70%;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: linear-gradient(to bottom,
+                    black 70%,
+                    lightgray, black);
+            /* Dark glass area */
+            margin: 15px;
+            border-radius: 10px;
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .display-frame {
+            position: relative;
+        }
+
+        canvas {
+            background: #000;
+            width: 188px;
+            height: 107px;
+            transform: translateY(-20px);
+        }
+
+        /* Touch buttons simulation */
+        .touch-btn {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 2px 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .touch-btn:hover {
+            color: #fff;
+            border-color: #fff;
+        }
+
+        .tb-steam {
+            top: 10px;
+            left: -40px;
+        }
+
+        .tb-wash {
+            top: 50px;
+            left: -40px;
+        }
+
+        .tb-rinse {
+            top: 10px;
+            right: -40px;
+        }
+
+        .tb-spin {
+            top: 50px;
+            right: -40px;
+        }
+
+        /* Debug / Status Area */
+        .debug-panel {
+            width: 1000px;
+            background: #fff;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .debug-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .led {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            border: 1px solid #bbb;
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        .led.on {
+            background: #0f0;
+            box-shadow: 0 0 5px #0f0;
+            border-color: #0a0;
+        }
+
+        .led.blue.on {
+            background: #00f;
+            box-shadow: 0 0 5px #00f;
+            border-color: #00a;
+        }
+
+        .led.red.on {
+            background: #f00;
+            box-shadow: 0 0 5px #f00;
+            border-color: #a00;
+        }
+
+        .log {
+            width: 100%;
+            height: 150px;
+            background: #222;
+            color: #0f0;
+            font-family: monospace;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+
+        .drum-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            align-items: center;
+            margin: 25px 0;
+        }
+
+        .drum-stats {
+            flex: 1;
+            min-width: 260px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .drum-stat {
+            background: #f8f8f8;
+            border-radius: 10px;
+            padding: 12px 16px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .drum-stat .label {
+            font-size: 11px;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: #7a7a7a;
+        }
+
+        .drum-stat .value {
+            display: block;
+            font-size: 22px;
+            font-weight: 600;
+            color: #2c2c2c;
+            margin-top: 6px;
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #333;
+            color: #fff;
+            padding: 5px 10px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Realistic Panel -->
+    <div class="machine-panel">
+        <!-- Left: Power & Branding -->
+        <div class="section-left">
+            <div class="lg-logo"><span>LG</span> Direct Drive</div>
+        </div>
+
+        <!-- Center: Dial & Start -->
+        <div class="section-center">
+            <div class="power-btn-pos">
+                <button id="btn-power" class="hw-btn" onmousedown="sendGpio(33, 1)" onmouseup="sendGpio(33, 0)"
+                    onmouseleave="sendGpio(33, 0)" title="Power">
+                    &#x23EF;
+                </button>
+                <div style="text-align: center; font-size: 12px; margin-top: 5px; color: #666;">POWER</div>
+            </div>
+            <div class="dial-container">
+                <div class="program-list">
+                    <div class="program-label lbl-1">Cotton/Normal</div>
+                    <div class="program-label lbl-2">Heavy Duty</div>
+                    <div class="program-label lbl-3">Bulky/Large</div>
+                    <div class="program-label lbl-4">Sanitary</div>
+                    <div class="program-label lbl-5">Allergiene</div>
+                    <div class="program-label lbl-6">Tub Clean</div>
+                    <div class="program-label lbl-7">Delicates</div>
+                    <div class="program-label lbl-8">Speed Wash</div>
+                </div>
+                <div class="dial-knob" title="Program Dial (Visual Only)"></div>
+            </div>
+
+            <div class="start-btn-pos">
+                <button id="btn-start" class="hw-btn" onmousedown="sendGpio(32, 1)" onmouseup="sendGpio(32, 0)"
+                    onmouseleave="sendGpio(32, 0)" title="Start/Pause">
+                    &#x23EF;
+                </button>
+                <div style="text-align: center; font-size: 12px; margin-top: 5px; color: #666;">START</div>
+            </div>
+        </div>
+
+        <!-- Right: Display -->
+        <div class="section-right">
+            <div class="display-frame">
+                <canvas id="tft" width="188" height="107"></canvas>
+
+                <!-- Fake Touch Buttons -->
+                <div class="touch-btn tb-steam">Steam</div>
+                <div class="touch-btn tb-wash">Wash</div>
+                <div class="touch-btn tb-rinse">Rinse</div>
+                <div class="touch-btn tb-spin">Spin</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug / Status Panel -->
+    <div class="debug-panel">
+        <h3>Simulator Controls & Status</h3>
+
+        <div class="debug-controls">
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                <input type="checkbox" onchange="sendGpio(34, this.checked ? 1 : 0)">
+                <strong>Door Sensor (Closed)</strong>
+            </label>
+
+            <div style="border-left: 1px solid #ccc; padding-left: 20px; display: flex; gap: 15px;">
+                <div>Start LED <div id="led-14" class="led"></div>
+                </div>
+                <div>Power LED <div id="led-26" class="led red"></div>
+                </div>
+                <div>Drum LED <div id="led-13" class="led"></div>
+                </div>
+                <div>Drain <div id="led-27" class="led blue"></div>
+                </div>
+                <div>Fill <div id="led-12" class="led blue"></div>
+                </div>
+                <div>Circ <div id="led-15" class="led blue"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="drum-panel">
+            <div class="drum-stats">
+                <div class="drum-stat">
+                    <span class="label">Target RPM</span>
+                    <span class="value" id="rpm-target">0 RPM</span>
+                </div>
+                <div class="drum-stat">
+                    <span class="label">Current RPM</span>
+                    <span class="value" id="rpm-current">0 RPM</span>
+                </div>
+                <div class="drum-stat">
+                    <span class="label">Direction</span>
+                    <span class="value" id="rpm-direction">Idle</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <div class="status-bar">
+        <span id="connectionStatus">Connecting...</span>
+        <span>ESP32 Washer Simulator</span>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/rhino3dm@8.0.1/rhino3dm.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.module.js",
+                "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.159.0/examples/jsm/controls/OrbitControls.js"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+        const socket = io();
+        const canvas = document.getElementById('tft');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const logEl = document.getElementById('log');
+        const rpmTargetEl = document.getElementById('rpm-target');
+        const rpmCurrentEl = document.getElementById('rpm-current');
+        const rpmDirectionEl = document.getElementById('rpm-direction');
+        const dialKnob = document.querySelector('.dial-knob');
+
+        const motorTelemetry = {
+            target: 0,
+            current: 0,
+            direction: 0,
+        };
+
+        function updateMotorStats() {
+            if (rpmTargetEl) {
+                rpmTargetEl.textContent = `${Math.round(motorTelemetry.target)} RPM`;
+            }
+            if (rpmCurrentEl) {
+                rpmCurrentEl.textContent = `${Math.round(motorTelemetry.current)} RPM`;
+            }
+            if (rpmDirectionEl) {
+                let label = 'Idle';
+                if (motorTelemetry.current > 1) {
+                    label = motorTelemetry.direction ? 'Counter-clockwise' : 'Clockwise';
+                }
+                rpmDirectionEl.textContent = label;
+            }
+        }
+
+        function sendDialDelta(delta) {
+            if (!delta) return;
+            socket.emit('dial_delta', { delta });
+        }
+
+        function angleToStep(evt, stepDeg) {
+            const rect = dialKnob.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const dx = evt.clientX - cx;
+            const dy = evt.clientY - cy;
+            const deg = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+            return Math.round(deg / stepDeg);
+        }
+
+        function setupDialInput() {
+            if (!dialKnob) {
+                return;
+            }
+            const stepDeg = 36; // coarse steps to mimic detents
+            let dragging = false;
+            let lastStep = null;
+
+            dialKnob.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY < 0 ? 1 : -1;
+                sendDialDelta(delta);
+            });
+
+            dialKnob.addEventListener('pointerdown', (e) => {
+                dragging = true;
+                lastStep = angleToStep(e, stepDeg);
+                dialKnob.setPointerCapture(e.pointerId);
+            });
+
+            dialKnob.addEventListener('pointermove', (e) => {
+                if (!dragging) return;
+                const step = angleToStep(e, stepDeg);
+                if (lastStep == null) {
+                    lastStep = step;
+                    return;
+                }
+                const diff = step - lastStep;
+                if (diff !== 0) {
+                    sendDialDelta(diff);
+                    lastStep = step;
+                }
+            });
+
+            const endDrag = (e) => {
+                if (dragging && e.pointerId !== undefined && dialKnob.hasPointerCapture(e.pointerId)) {
+                    dialKnob.releasePointerCapture(e.pointerId);
+                }
+                dragging = false;
+                lastStep = null;
+            };
+
+            dialKnob.addEventListener('pointerup', endDrag);
+            dialKnob.addEventListener('pointercancel', endDrag);
+            dialKnob.addEventListener('pointerleave', endDrag);
+        }
+
+        setupDialInput();
+
+        // Center the 188x107 display on the 320x240 canvas
+
+        // Initialize canvas
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, 320, 240);
+
+        socket.on('connect', () => {
+            document.getElementById('connectionStatus').textContent = 'Connected to Host';
+            document.getElementById('connectionStatus').style.color = '#0f0';
+        });
+
+        socket.on('draw_rect', (data) => {
+            // Convert RGB565 to RGB888
+            const color565 = data.c;
+            const r = (color565 >> 11) * 255 / 31;
+            const g = ((color565 >> 5) & 0x3F) * 255 / 63;
+            const b = (color565 & 0x1F) * 255 / 31;
+
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.fillRect(data.x, data.y, data.w, data.h);
+        });
+
+        socket.on('draw_bitmap', (data) => {
+            const w = data.w;
+            const h = data.h;
+            const hex = data.data;
+            const imgData = ctx.createImageData(w, h);
+            const pixels = imgData.data;
+
+            for (let i = 0; i < w * h; i++) {
+                // Parse 4 hex chars (16-bit color)
+                const val = parseInt(hex.substr(i * 4, 4), 16);
+
+                // RGB565 to RGB888
+                const r = (val >> 11) * 255 / 31;
+                const g = ((val >> 5) & 0x3F) * 255 / 63;
+                const b = (val & 0x1F) * 255 / 31;
+
+                const idx = i * 4;
+                pixels[idx] = r;
+                pixels[idx + 1] = g;
+                pixels[idx + 2] = b;
+                pixels[idx + 3] = 255; // Alpha
+            }
+
+            ctx.putImageData(imgData, data.x - 27, data.y - 5);
+        });
+
+        socket.on('gpio_update', (data) => {
+            const el = document.getElementById(`led-${data.p}`);
+            if (el) {
+                if (data.v > 0) el.classList.add('on');
+                else el.classList.remove('on');
+            }
+        });
+
+        socket.on('motor_state', (data) => {
+            if (!data) {
+                return;
+            }
+            motorTelemetry.target = Number(data.target) || 0;
+            motorTelemetry.current = Number(data.current) || 0;
+            motorTelemetry.direction = Number(data.direction) ? 1 : 0;
+            updateMotorStats();
+        });
+
+        socket.on('log', (data) => {
+            const div = document.createElement('div');
+            div.textContent = data.msg;
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+        });
+
+        function sendGpio(pin, val) {
+            console.log("sendGpio", pin, val);
+            socket.emit('gpio_input', { pin: pin, val: val });
+        }
+        window.sendGpio = sendGpio;
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Three.js + Ammo Cloth Physics</title>
+    <style>
+        body { margin:0; background:#000; overflow:hidden; }
+        #loading { color:white; font-size:20px; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
+    </style>
+</head>
+
+<body>
+<div id="loading">Loading Physics Engine...</div>
+
+<script type="module">
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import AmmoModule from "https://unpkg.com/ammojs-typed@1.0.6/ammo/Ammo.js";
+
+// -------------------------
+let scene, camera, renderer, controls;
+let physicsWorld, softBodyHelpers;
+let clothMesh, clothSoftBody;
+let Ammo; // global reference
+
+// -------------------------
+AmmoModule().then(lib => {
+    Ammo = lib;
+    document.getElementById("loading").style.display = "none";
+    initGraphics();
+    initPhysics();
+    createPlane();
+    createCloth();
+    animate();
+});
+
+// -------------------------
+function initGraphics() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x202020);
+
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 200);
+    camera.position.set(0, 5, 15);
+
+    renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    controls = new OrbitControls(camera, renderer.domElement);
+
+    const light = new THREE.DirectionalLight(0xffffff, 1.5);
+    light.position.set(5, 10, 5);
+    scene.add(light);
+}
+
+// -------------------------
+function initPhysics() {
+    const cfg = new Ammo.btSoftBodyRigidBodyCollisionConfiguration();
+    const dispatcher = new Ammo.btCollisionDispatcher(cfg);
+    const broadphase = new Ammo.btDbvtBroadphase();
+    const solver = new Ammo.btSequentialImpulseConstraintSolver();
+    const softSolver = new Ammo.btDefaultSoftBodySolver();
+
+    physicsWorld = new Ammo.btSoftRigidDynamicsWorld(
+        dispatcher, broadphase, solver, cfg, softSolver
+    );
+
+    physicsWorld.setGravity(new Ammo.btVector3(0, -9.82, 0));
+    physicsWorld.getWorldInfo().set_m_gravity(new Ammo.btVector3(0, -9.82, 0));
+
+    softBodyHelpers = new Ammo.btSoftBodyHelpers();
+}
+
+// -------------------------
+function createPlane() {
+    const geometry = new THREE.PlaneGeometry(20, 20);
+    const material = new THREE.MeshStandardMaterial({ color:0x444444 });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.rotateX(-Math.PI/2);
+    scene.add(mesh);
+
+    const shape = new Ammo.btBoxShape(new Ammo.btVector3(10, 0.5, 10));
+    const transform = new Ammo.btTransform();
+    transform.setIdentity();
+    transform.setOrigin(new Ammo.btVector3(0,0,0));
+
+    const body = new Ammo.btRigidBody(
+        new Ammo.btRigidBodyConstructionInfo(0, new Ammo.btDefaultMotionState(transform), shape)
+    );
+
+    physicsWorld.addRigidBody(body);
+}
+
+// -------------------------
+function createCloth() {
+    const width = 6, height = 4;
+    const resX = 15, resY = 10;
+
+    clothMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(width, height, resX, resY),
+        new THREE.MeshStandardMaterial({ color:0x6688ff, wireframe:true, side:THREE.DoubleSide })
+    );
+    clothMesh.position.set(0, 6, 0);
+    scene.add(clothMesh);
+
+    const cloth = softBodyHelpers.CreatePatch(
+        physicsWorld.getWorldInfo(),
+        new Ammo.btVector3(-width/2, 6, -height/2),
+        new Ammo.btVector3(width/2, 6, -height/2),
+        new Ammo.btVector3(-width/2, 6, height/2),
+        new Ammo.btVector3(width/2, 6, height/2),
+        resX+1, resY+1,
+        1, true
+    );
+
+    cloth.get_m_cfg().set_viterations(10);
+    cloth.get_m_cfg().set_piterations(10);
+    cloth.setTotalMass(1, false);
+
+    physicsWorld.addSoftBody(cloth, 1, -1);
+    clothSoftBody = cloth;
+}
+
+// -------------------------
+function animate() {
+    requestAnimationFrame(animate);
+    updatePhysics(1/60);
+    renderer.render(scene, camera);
+}
+
+function updatePhysics(dt) {
+    physicsWorld.stepSimulation(dt, 10);
+
+    if (!clothSoftBody) return;
+
+    const positions = clothMesh.geometry.attributes.position.array;
+    const nodes = clothSoftBody.get_m_nodes();
+
+    let i = 0;
+    for (let n = 0; n < nodes.size(); n++) {
+        const p = nodes.at(n).get_m_x();
+        positions[i++] = p.x();
+        positions[i++] = p.y();
+        positions[i++] = p.z();
+    }
+
+    clothMesh.geometry.attributes.position.needsUpdate = true;
+    clothMesh.geometry.computeVertexNormals();
+}
+</script>
+</body>
+</html>
