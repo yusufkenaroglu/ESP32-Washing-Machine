@@ -1,7 +1,6 @@
 idf_component_register(
     SRCS
     "main.cpp"
-    "tasks.cpp"
     "drivers/gpio_hal/gpio_hal.cpp"
     "ulp/ulp_manager.cpp"
     "drivers/display/display.cpp"
@@ -12,10 +11,11 @@ idf_component_register(
     "drivers/wifi/wifi_manager.cpp"
     "drivers/freehome/freehome_manager.cpp"
     "simulator/simulator.cpp"
-    "wash_plan.cpp"
-    "ui_controller.cpp"
+    "ui_controller/ui_controller.cpp"
     "machine_state/machine_state.cpp"
     "machine_state/constants.cpp"
+    "wash_plan/wash_plan.cpp"
+    "tasks/tasks.cpp"
     INCLUDE_DIRS 
     "."
     "drivers"
@@ -29,6 +29,9 @@ idf_component_register(
     "simulator"
     "ulp"
     "machine_state"
+    "wash_plan"
+    "tasks"
+    "ui_controller"
     REQUIRES
     soc 
     nvs_flash 
