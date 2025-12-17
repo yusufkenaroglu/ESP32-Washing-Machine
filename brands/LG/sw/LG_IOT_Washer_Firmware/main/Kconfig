@@ -1,0 +1,24 @@
+menu "LG Washer - Main Component"
+
+config WIFI_ENABLED
+    bool "Enable WiFi support"
+    default y
+    help
+      Enable the WiFi subsystem, HTTP server and FreeHome integration.
+
+config BALANCE_DETECTION
+    bool "Enable balance detection (MPU6050)"
+    default n
+    help
+      When enabled, the MPU6050 sensor will be initialized and used to
+      detect out of balance loads during spin cycles.
+
+config SIMULATOR_MODE
+    bool "Enable simulator mode"
+    default n
+    help
+      Build and run in simulator mode. When enabled, hardware access is
+      routed to the simulator backend and ULP/deep-sleep behavior is
+      disabled.
+
+endmenu
