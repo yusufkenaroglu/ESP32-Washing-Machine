@@ -12,7 +12,34 @@ All of this is fit inside miniature machines using salvaged toy parts, in-house 
 
 ---
 
-## What’s Inside
+## Active Development
+
+**[LG IOT Washer Firmware](brands/LG/sw/LG_IOT_Washer_Firmware/)** is the actively developed ESP-IDF firmware:
+
+| Feature | Description |
+|---------|-------------|
+| FreeRTOS Tasks | Event-driven state machine architecture |
+| ST7789 Display | 320×240 TFT with 188x107 sprite |
+| ODrive Motor | UART-controlled brushless motor for drum |
+| DAC Audio | ADSR envelope audio cues |
+| ULP Deep Sleep | Power button wake with minimal standby current |
+| OTA Updates | Factory + dual OTA partitions with rollback |
+| FreeHome IoT | Optional cloud connectivity |
+| Simulator | Desktop development without hardware |
+
+### Quick Start
+
+```bash
+cd brands/LG/sw/LG_IOT_Washer_Firmware
+idf.py build
+idf.py -p /dev/ttyUSB0 flash monitor
+```
+
+Requires **ESP-IDF v5.4+**. See the [firmware README](brands/LG/sw/LG_IOT_Washer_Firmware/README.md) for full build instructions and hardware setup.
+
+---
+
+## What's Inside
 
 - Arduino IDE FreeRTOS firmware 
 - GPIO-based control of peripherals
@@ -20,7 +47,7 @@ All of this is fit inside miniature machines using salvaged toy parts, in-house 
 - Modular code structure (UI, state machine, I/O)
 
 > This is a hobby project intended to be open and educational.  
-> It’s **not a product**. It's an invitation to tinker, learn, and contribute.
+> It's **not a product**. It's an invitation to tinker, learn, and contribute.
 
 ---
 
@@ -39,6 +66,18 @@ Here are some clips showing different stages of the project:
 
 More videos and technical breakdowns are available on my YouTube channel:  
 🔗 [@wishywasher1330](https://www.youtube.com/@wishywasher1330)
+
+---
+
+## Open Source — Still in Progress
+
+The code, organization, and documentation are **not yet where I want them to be**.  
+I'm publishing early to:
+- Invite others into the development process
+- Help those who asked for the code
+- Share what I've learned, even if it's not perfect
+
+You're welcome to explore, fork, improve, or ask questions.
 
 ---
 
@@ -83,7 +122,7 @@ They are used here **solely for visual realism** and **do not imply any endorsem
 
 ---
 
-## 📄 License
+## License
 
 This project is released under the **Apache License 2.0**.  
 See ['LICENSE'](./LICENSE) for details.
