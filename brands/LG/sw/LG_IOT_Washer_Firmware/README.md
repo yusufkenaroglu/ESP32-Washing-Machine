@@ -47,13 +47,15 @@ idf.py -p /dev/ttyUSB0 flash monitor
 
 ### Simulator Mode
 
-Enable `CONFIG_SIMULATOR_MODE` in `app_config.h` to run with the Python simulator:
+Enable `CONFIG_SIMULATOR_MODE` via `idf.py menuconfig` to run with the Python simulator. Navigate to "Component config" -> "main" and enable `Simulator Mode (CONFIG_SIMULATOR_MODE)`.
 
 ```bash
-# Terminal 1: Flash and run firmware
-idf.py flash monitor
+# Set the option then build/flash the firmware
+idf.py menuconfig
+idf.py build
+idf.py -p /dev/ttyUSB0 flash monitor
 
-# Terminal 2: Start simulator host
+# In another terminal: start simulator host
 python tools/simulator/sim_host.py
 ```
 
@@ -112,6 +114,12 @@ The firmware supports 14 wash programs with configurable parameters:
 Each program builds a dynamic wash plan with sections: Detecting → Saturation → Prewash (opt) → Main Wash → Interim Spin → Rinse(s) → Final Spin.
 
 ## Configuration
+
+Key settings are now exposed via Kconfig (use `idf.py menuconfig`). Important main options include:
+
+- `CONFIG_WIFI_ENABLED` — Enable WiFi and provisioning UI (esp32-wifi-manager).
+- `CONFIG_BALANCE_DETECTION` — Enable MPU6050-based imbalance detection.
+- `CONFIG_SIMULATOR_MODE` — Build firmware for use with the simulator host (disables some hardware drivers).
 
 Key settings in `sdkconfig.defaults`:
 

@@ -1,5 +1,5 @@
 /*
- * constants.c
+ * constants.cpp
  * Program timing presets, statistical parameters, and program names
  *
  * Copyright 2025 Yusuf Emre Kenaroglu

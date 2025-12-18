@@ -1,6 +1,6 @@
 ## IDF Component Manager Manifest File
 targets:
-  - esp32
+- esp32
 dependencies:
   ## Required IDF version
   idf:
@@ -17,3 +17,4 @@ dependencies:
   #   # All dependencies of `main` are public by default.
   #   public: true
   espressif/mdns: '*'
+  espressif/cjson: ^1.7.19

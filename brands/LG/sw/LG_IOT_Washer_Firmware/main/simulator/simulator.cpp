@@ -16,7 +16,7 @@ static const char *TAG = "simulator";
 static uint64_t s_gpio_inputs = 0;
 static uint64_t s_gpio_latched = 0; // Latch for short pulses
 static portMUX_TYPE s_gpio_lock = portMUX_INITIALIZER_UNLOCKED;
-static SemaphoreHandle_t s_uart_mutex = NULL;
+static SemaphoreHandle_t s_uart_mutex = nullptr;
 
 #define SIM_UART_NUM UART_NUM_0
 #define BUF_SIZE 1024
@@ -44,7 +44,7 @@ static void simulator_input_task(void *arg)
     uart_config.source_clk = UART_SCLK_DEFAULT;
     
     // Install driver: RX buffer = BUF_SIZE*2, TX buffer = 0 (blocking), No event queue
-    ESP_ERROR_CHECK(uart_driver_install(SIM_UART_NUM, BUF_SIZE * 2, 0, 0, NULL, 0));
+    ESP_ERROR_CHECK(uart_driver_install(SIM_UART_NUM, BUF_SIZE * 2, 0, 0, nullptr, 0));
     ESP_ERROR_CHECK(uart_param_config(SIM_UART_NUM, &uart_config));
     
     // 3. Re-connect the VFS to this UART so printf/ESP_LOG still works
@@ -95,7 +95,7 @@ static void simulator_input_task(void *arg)
         }
     }
     free(data);
-    vTaskDelete(NULL);
+    vTaskDelete(nullptr);
 }
 
 /*===========================================================================
@@ -107,7 +107,7 @@ esp_err_t simulator_init(void)
     s_uart_mutex = xSemaphoreCreateMutex();
     
     // Create input task
-    xTaskCreate(simulator_input_task, "sim_input", 4096, NULL, 10, NULL);
+    xTaskCreate(simulator_input_task, "sim_input", 4096, nullptr, 10, nullptr);
     
     // We don't use ESP_LOG here because we changed the baud rate and it might conflict
     // But if we want to see logs on the host, we should ensure they are sent correctly.

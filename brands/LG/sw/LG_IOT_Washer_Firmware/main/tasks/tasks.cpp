@@ -167,6 +167,18 @@ static void wash_motion_task_entry(void *arg)
     free(arg);
     bool dir = false;
 
+    // Helper: bounded wait that sleeps in small chunks so the task remains
+    // responsive and timing can be polled or interrupted by the scheduler.
+    auto bounded_delay_ms = [](int total_ms) {
+        const int chunk = 50; // 50ms chunks
+        int remaining = total_ms;
+        while (remaining > 0) {
+            int wait = remaining > chunk ? chunk : remaining;
+            vTaskDelay(pdMS_TO_TICKS(wait));
+            remaining -= wait;
+        }
+    };
+
     /*
      * Start-of-wash primitive behaviour:
      * - `fill_water` uses a fixed-time fill here for simplicity and to keep
@@ -177,7 +189,8 @@ static void wash_motion_task_entry(void *arg)
      */
     if (params.fill_water) {
         pwm_set_fill_pump(4095);
-        vTaskDelay(pdMS_TO_TICKS(10000));
+        // Use bounded wait so task stays responsive and can be preempted
+        bounded_delay_ms(10000);
         pwm_set_fill_pump(0);
     }
 
@@ -187,11 +200,14 @@ static void wash_motion_task_entry(void *arg)
     }
 
     if (params.spin_rpm > 0) {
-        // Spin cycle
-        // Ramp up?
+        // Spin cycle: set target velocity and then wait while allowing
+        // the task to remain responsive. Use bounded_delay_ms so that
+        // other events (stop/abort) can be serviced in a timely manner.
         odrive_set_velocity(0, rpm_to_turns_per_sec(params.spin_rpm));
+        // Wait indefinitely until task is deleted by stop_wash_action; use
+        // a long bounded loop to avoid a single huge blocking delay.
         while (true) {
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            bounded_delay_ms(1000);
         }
     }
 
@@ -211,9 +227,9 @@ static void wash_motion_task_entry(void *arg)
         if (params.pump_on_steps > 0) {
             for (int i = 0; i < params.pump_on_steps; i++) {
                 pwm_set_circulation_pump(params.circulation_pump_pwm);
-                vTaskDelay(pdMS_TO_TICKS(params.pump_on_step_ms));
+                bounded_delay_ms(params.pump_on_step_ms);
                 pwm_set_circulation_pump(0);
-                vTaskDelay(pdMS_TO_TICKS(params.pump_on_step_ms));
+                bounded_delay_ms(params.pump_on_step_ms);
                 if (params.alternate_direction) {
                     dir = !dir;
                     velocity = -velocity;
@@ -221,7 +237,7 @@ static void wash_motion_task_entry(void *arg)
                 }
             }
             odrive_set_velocity(0, 0);
-            vTaskDelay(pdMS_TO_TICKS(params.stop_duration_ms));
+            bounded_delay_ms(params.stop_duration_ms);
             continue;
         }
 
@@ -230,17 +246,17 @@ static void wash_motion_task_entry(void *arg)
         int pump_on_end = (int)(tumble_ms * params.pump_on_end_frac);
 
         if (pump_on_start > 0) {
-            vTaskDelay(pdMS_TO_TICKS(pump_on_start));
+            bounded_delay_ms(pump_on_start);
         }
 
         if (pump_on_end > pump_on_start) {
             pwm_set_circulation_pump(params.circulation_pump_pwm);
-            vTaskDelay(pdMS_TO_TICKS(pump_on_end - pump_on_start));
+            bounded_delay_ms(pump_on_end - pump_on_start);
             pwm_set_circulation_pump(0);
         }
 
         if (tumble_ms > pump_on_end) {
-            vTaskDelay(pdMS_TO_TICKS(tumble_ms - pump_on_end));
+            bounded_delay_ms(tumble_ms - pump_on_end);
         }
 
         odrive_set_velocity(0, 0);
@@ -338,6 +354,9 @@ static void apply_power_on(WmRuntimeContext &ctx)
     machine_set_logo_enabled(false);
     ui_controller_reset();
     ESP_LOGI(TAG, "Power on sequence complete");
+    // Enable both power and start buttons while the machine is on
+    ulp_set_button_mask(0x3);
+
 }
 
 static void apply_power_off(WmRuntimeContext &ctx)
@@ -369,11 +388,10 @@ static void apply_power_off(WmRuntimeContext &ctx)
     enqueue_command(WM_CMD_SET_POWER_LED, 0, 0);
     enqueue_command(WM_CMD_SET_LOGO_ENABLE, 0, 0);
     ESP_LOGI(TAG, "Power off sequence complete");
-
-#if !CONFIG_SIMULATOR_MODE
+    // Only the power button should be active while off
+    ulp_set_button_mask(0x1);
     ESP_LOGI(TAG, "Power off: entering deep sleep with ULP watching power button");
     ESP_ERROR_CHECK(ulp_power_enter_deep_sleep());
-#endif
 }
 
 static void complete_cycle(WmRuntimeContext &ctx)

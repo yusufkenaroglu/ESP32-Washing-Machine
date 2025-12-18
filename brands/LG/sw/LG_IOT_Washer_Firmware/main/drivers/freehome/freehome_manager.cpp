@@ -32,10 +32,10 @@ static const char *KEY_PAIR_TOKEN = "pair_token";
 static freehome_status_t s_status = FREEHOME_STATUS_DISABLED;
 static bool s_linked = false;
 static bool s_enabled = false;
-static char *s_device_id = NULL; // heap allocated
+static char *s_device_id = nullptr; // heap allocated
 
 // State callback (single for now)
-static freehome_state_cb_t s_state_cb = NULL;
+static freehome_state_cb_t s_state_cb = nullptr;
 
 static void notify_state_change(freehome_status_t new_state)
 {
@@ -58,7 +58,7 @@ int freehome_init(void)
         nvs_get_u8(h, KEY_ENABLED, &enabled);
 
         // device id
-        err = nvs_get_str(h, KEY_DEVICE_ID, NULL, &required);
+        err = nvs_get_str(h, KEY_DEVICE_ID, nullptr, &required);
         if (err == ESP_OK && required > 0) {
             s_device_id = static_cast<char *>(malloc(required));
             if (s_device_id) {
@@ -157,7 +157,7 @@ int freehome_unlink(void)
     nvs_close(h);
 
     s_linked = false;
-    if (s_device_id) { free(s_device_id); s_device_id = NULL; }
+    if (s_device_id) { free(s_device_id); s_device_id = nullptr; }
     notify_state_change(FREEHOME_STATUS_DISABLED);
     ESP_LOGI(TAG, "FreeHome unlinked and data erased");
     return 0;

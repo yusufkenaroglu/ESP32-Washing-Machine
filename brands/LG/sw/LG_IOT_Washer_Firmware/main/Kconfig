@@ -18,7 +18,6 @@ config SIMULATOR_MODE
     default n
     help
       Build and run in simulator mode. When enabled, hardware access is
-      routed to the simulator backend and ULP/deep-sleep behavior is
-      disabled.
+      routed to the simulator backend.
 
 endmenu

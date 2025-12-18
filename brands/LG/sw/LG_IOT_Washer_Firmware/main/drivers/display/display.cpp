@@ -1,5 +1,5 @@
 /*
- * display.c
+ * display.cpp
  * TFT display driver using SPI
  *
  * This is a simplified driver. For production, consider using
@@ -38,11 +38,11 @@ static const char *TAG = "display";
 // Sprite dimensions are defined in `app_config.h` (via SPRITE_WIDTH/
 // SPRITE_HEIGHT). Avoid duplicating values here.
 
-static uint16_t *s_sprite_buf = NULL;
-static uint16_t *s_prev_sprite_buf = NULL;
+static uint16_t *s_sprite_buf = nullptr;
+static uint16_t *s_prev_sprite_buf = nullptr;
 
-static void (*s_simulator_draw_cb)(int16_t, int16_t, int16_t, int16_t, uint16_t) = NULL;
-static void (*s_simulator_bitmap_cb)(int16_t, int16_t, int16_t, int16_t, const uint16_t *) = NULL;
+static void (*s_simulator_draw_cb)(int16_t, int16_t, int16_t, int16_t, uint16_t) = nullptr;
+static void (*s_simulator_bitmap_cb)(int16_t, int16_t, int16_t, int16_t, const uint16_t *) = nullptr;
 
 void display_set_simulator_hook(void (*cb)(int16_t, int16_t, int16_t, int16_t, uint16_t))
 {
@@ -58,7 +58,7 @@ void display_set_simulator_bitmap_hook(void (*cb)(int16_t, int16_t, int16_t, int
  * State Variables
  *===========================================================================*/
 
-static spi_device_handle_t s_spi = NULL;
+static spi_device_handle_t s_spi = nullptr;
 static bool s_initialized = false;
 
 /*===========================================================================
@@ -680,7 +680,7 @@ static void sprite_draw_text_vlw(int x, int y, const char *text, const uint8_t *
 
 static void sprite_draw_text(int x, int y, const char *text, display_font_t font, uint16_t fg_color, uint16_t bg_color)
 {
-    const uint8_t *font_data = NULL;
+    const uint8_t *font_data = nullptr;
     switch (font)
     {
         break;
@@ -733,7 +733,7 @@ void display_draw_bitmap(int16_t x, int16_t y, int16_t w, int16_t h,
         s_simulator_bitmap_cb(x, y, w, h, data);
     }
 
-    if (!s_initialized || data == NULL)
+    if (!s_initialized || data == nullptr)
         return;
 
     display_set_window(x, y, x + w - 1, y + h - 1);
@@ -752,7 +752,7 @@ void display_draw_bitmap(int16_t x, int16_t y, int16_t w, int16_t h,
 void display_draw_bitmap_mono(int16_t x, int16_t y, int16_t w, int16_t h,
                               const uint8_t *data, uint16_t fg_color, uint16_t bg_color)
 {
-    if (!s_initialized || data == NULL)
+    if (!s_initialized || data == nullptr)
         return;
 
     int byte_width = (w + 7) / 8;

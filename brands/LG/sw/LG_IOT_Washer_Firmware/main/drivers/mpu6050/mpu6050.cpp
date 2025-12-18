@@ -5,7 +5,6 @@
  * Copyright 2025 Yusuf Emre Kenaroglu
  * SPDX-License-Identifier: Apache-2.0
  */
-#
 /*
  * Why this driver exists and design notes:
  * - The MPU6050 is used to detect imbalance via short vibration sampling
@@ -203,7 +202,7 @@ esp_err_t mpu6050_init(void)
 
 esp_err_t mpu6050_read_raw(mpu6050_raw_data_t *data)
 {
-    if (!s_initialized || data == NULL) {
+    if (!s_initialized || data == nullptr) {
         return ESP_ERR_INVALID_STATE;
     }
     

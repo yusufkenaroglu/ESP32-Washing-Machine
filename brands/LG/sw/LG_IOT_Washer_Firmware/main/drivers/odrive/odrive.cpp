@@ -45,7 +45,7 @@ static const char *TAG = "odrive";
  *===========================================================================*/
 
 static bool s_initialized = false;
-static SemaphoreHandle_t s_uart_mutex = NULL;
+static SemaphoreHandle_t s_uart_mutex = nullptr;
 
 /*===========================================================================
  * Internal Functions
@@ -63,7 +63,7 @@ static esp_err_t odrive_send_command(const char *cmd, char *response,
                                       size_t response_len, uint32_t timeout_ms)
 {
 #if CONFIG_SIMULATOR_MODE
-    if (response != NULL && response_len > 0) {
+    if (response != nullptr && response_len > 0) {
         snprintf(response, response_len, "0.0");
     }
     return ESP_OK;
@@ -93,7 +93,7 @@ static esp_err_t odrive_send_command(const char *cmd, char *response,
     ESP_LOGD(TAG, "TX: %s", cmd);
     
     // Read response if buffer provided
-    if (response != NULL && response_len > 0) {
+    if (response != nullptr && response_len > 0) {
         memset(response, 0, response_len);
         
         int total_read = 0;
@@ -113,7 +113,7 @@ static esp_err_t odrive_send_command(const char *cmd, char *response,
                     total_read += read;
                     
                     // Check for newline (end of response)
-                    if (strchr(response, '\n') != NULL) {
+                    if (strchr(response, '\n') != nullptr) {
                         break;
                     }
                 }
@@ -152,7 +152,7 @@ static esp_err_t odrive_read_float(const char *cmd, float *value)
         return ret;
     }
     
-    *value = strtof(response, NULL);
+    *value = strtof(response, nullptr);
     return ESP_OK;
 }
 
@@ -174,11 +174,7 @@ esp_err_t odrive_init(void)
     
     // Create mutex
     s_uart_mutex = xSemaphoreCreateMutex();
-    if (s_uart_mutex == NULL) {
-        ESP_LOGE(TAG, "Failed to create mutex");
-        return ESP_FAIL;
-    }
-    if (s_uart_mutex == NULL) {
+    if (s_uart_mutex == nullptr) {
         ESP_LOGE(TAG, "Failed to create mutex");
         return ESP_FAIL;
     }
@@ -206,7 +202,7 @@ esp_err_t odrive_init(void)
     }
     
     ret = uart_driver_install(ODRIVE_UART_NUM, ODRIVE_BUF_SIZE * 2, 
-                              ODRIVE_BUF_SIZE * 2, 0, NULL, 0);
+                              ODRIVE_BUF_SIZE * 2, 0, nullptr, 0);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to install UART driver: %s", esp_err_to_name(ret));
         return ret;
@@ -223,7 +219,7 @@ esp_err_t odrive_set_state(uint8_t axis, odrive_axis_state_t state)
 {
     char cmd[64];
     snprintf(cmd, sizeof(cmd), "w axis%d.requested_state %d", axis, (int)state);
-    return odrive_send_command(cmd, NULL, 0, 100);
+    return odrive_send_command(cmd, nullptr, 0, 100);
 }
 
 esp_err_t odrive_set_control_mode(uint8_t axis, odrive_control_mode_t mode)
@@ -231,7 +227,7 @@ esp_err_t odrive_set_control_mode(uint8_t axis, odrive_control_mode_t mode)
     char cmd[64];
     snprintf(cmd, sizeof(cmd), "w axis%d.controller.config.control_mode %d", 
              axis, (int)mode);
-    return odrive_send_command(cmd, NULL, 0, 100);
+    return odrive_send_command(cmd, nullptr, 0, 100);
 }
 
 esp_err_t odrive_set_velocity(uint8_t axis, float velocity)
@@ -244,14 +240,14 @@ esp_err_t odrive_set_velocity(uint8_t axis, float velocity)
 #endif
     char cmd[64];
     snprintf(cmd, sizeof(cmd), "v %d %.3f 0", axis, velocity);
-    return odrive_send_command(cmd, NULL, 0, 100);
+    return odrive_send_command(cmd, nullptr, 0, 100);
 }
 
 esp_err_t odrive_set_velocity_ff(uint8_t axis, float velocity, float torque_ff)
 {
     char cmd[64];
     snprintf(cmd, sizeof(cmd), "v %d %.3f %.3f", axis, velocity, torque_ff);
-    return odrive_send_command(cmd, NULL, 0, 100);
+    return odrive_send_command(cmd, nullptr, 0, 100);
 }
 
 esp_err_t odrive_get_velocity(uint8_t axis, float *velocity)
@@ -276,8 +272,8 @@ esp_err_t odrive_get_bus_voltage(float *voltage)
 esp_err_t odrive_emergency_stop(void)
 {
     // Set both axes to idle immediately
-    odrive_send_command("w axis0.requested_state 1", NULL, 0, 50);
-    odrive_send_command("w axis1.requested_state 1", NULL, 0, 50);
+    odrive_send_command("w axis0.requested_state 1", nullptr, 0, 50);
+    odrive_send_command("w axis1.requested_state 1", nullptr, 0, 50);
     
     ESP_LOGW(TAG, "Emergency stop activated");
     return ESP_OK;
@@ -287,16 +283,16 @@ esp_err_t odrive_clear_errors(uint8_t axis)
 {
     char cmd[64];
     snprintf(cmd, sizeof(cmd), "w axis%d.error 0", axis);
-    esp_err_t ret = odrive_send_command(cmd, NULL, 0, 100);
+    esp_err_t ret = odrive_send_command(cmd, nullptr, 0, 100);
     
     snprintf(cmd, sizeof(cmd), "w axis%d.motor.error 0", axis);
-    odrive_send_command(cmd, NULL, 0, 100);
+    odrive_send_command(cmd, nullptr, 0, 100);
     
     snprintf(cmd, sizeof(cmd), "w axis%d.encoder.error 0", axis);
-    odrive_send_command(cmd, NULL, 0, 100);
+    odrive_send_command(cmd, nullptr, 0, 100);
     
     snprintf(cmd, sizeof(cmd), "w axis%d.controller.error 0", axis);
-    odrive_send_command(cmd, NULL, 0, 100);
+    odrive_send_command(cmd, nullptr, 0, 100);
     
     return ret;
 }

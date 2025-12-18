@@ -33,6 +33,8 @@
 
 #include "freertos/queue.h"
 
+#include "cJSON.h"
+
 static const char *TAG = "wifi_mgr";
 
 /* Internal event queue to decouple vendor callbacks from heavier processing.
@@ -42,15 +44,15 @@ typedef struct {
     int code;
 } wifi_internal_event_t;
 
-static QueueHandle_t s_wifi_evt_queue = NULL;
-static TaskHandle_t s_wifi_evt_task = NULL;
+static QueueHandle_t s_wifi_evt_queue = nullptr;
+static TaskHandle_t s_wifi_evt_task = nullptr;
 
 static void wifi_event_processor_task(void *pv);
 
 /* Internal event codes (wrapper-local) */
 #define EVT_AP_STA_CONNECTED  100
 
-static esp_event_handler_instance_t s_wrapper_wifi_evt_inst = NULL;
+static esp_event_handler_instance_t s_wrapper_wifi_evt_inst = nullptr;
 
 static void wrapper_wifi_event_handler(void *handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
@@ -71,7 +73,7 @@ static void wrapper_wifi_event_handler(void *handler_arg, esp_event_base_t event
  *===========================================================================*/
 
 #define UNUSED(x) (void)(x)
-static httpd_handle_t s_http_server = NULL;
+static httpd_handle_t s_http_server = nullptr;
 static wifi_info_t s_wifi_info = {};
 
 #define WIFI_CONNECTED_BIT  BIT0
@@ -94,9 +96,14 @@ void wm_cb_order_connect_sta(void *param);
  * Event Handlers
  *===========================================================================*/
 
-/* All Wi-Fi event handling and connection management is done by the
- * vendored esp32-wifi-manager component. Do not register or use
- * esp_event/esp_wifi directly in this module. */
+/* Most Wi‑Fi handling is delegated to the vendored esp32-wifi-manager
+ * component and its callbacks. In a few cases where the vendor does not
+ * expose a specific notification (e.g. station connected to our SoftAP),
+ * this module registers a lightweight `esp_event` handler strictly to
+ * enqueue an internal event; the vendor component still performs the
+ * core Wi‑Fi and provisioning work. Prefer vendor callbacks where
+ * available — if the vendor exposes AP‑STA notifications in the future,
+ * this handler can be removed. */
 
 /*===========================================================================
  * WiFi Implementation
@@ -116,16 +123,16 @@ esp_err_t wifi_manager_init(void)
     /* Create internal event queue and processor task to handle vendor events
      * outside of the vendor task/callback context. This keeps callbacks
      * minimal and non-blocking. */
-    if (s_wifi_evt_queue == NULL) {
+    if (s_wifi_evt_queue == nullptr) {
         s_wifi_evt_queue = xQueueCreate(8, sizeof(wifi_internal_event_t));
     }
-    if (s_wifi_evt_task == NULL && s_wifi_evt_queue) {
-        xTaskCreate(wifi_event_processor_task, "wifi_evt_proc", 3072, NULL, tskIDLE_PRIORITY+3, &s_wifi_evt_task);
+    if (s_wifi_evt_task == nullptr && s_wifi_evt_queue) {
+        xTaskCreate(wifi_event_processor_task, "wifi_evt_proc", 3072, nullptr, tskIDLE_PRIORITY+3, &s_wifi_evt_task);
     }
     /* Register a lightweight esp_event handler to detect when a station
      * connects to our SoftAP. The handler only enqueues an internal event
      * and does not perform blocking work. */
-    esp_err_t rc = esp_event_handler_instance_register(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &wrapper_wifi_event_handler, NULL, &s_wrapper_wifi_evt_inst);
+    esp_err_t rc = esp_event_handler_instance_register(WIFI_EVENT, WIFI_EVENT_AP_STACONNECTED, &wrapper_wifi_event_handler, nullptr, &s_wrapper_wifi_evt_inst);
     if (rc != ESP_OK) {
         ESP_LOGW(TAG, "Failed to register wrapper wifi event handler: %s", esp_err_to_name(rc));
     }
@@ -142,7 +149,7 @@ esp_err_t wifi_start_ap(void)
     strncpy((char*)wifi_settings.ap_ssid, WIFI_AP_SSID, MAX_SSID_SIZE-1);
     wifi_settings.ap_ssid[MAX_SSID_SIZE-1] = '\0';
     /* keep existing password in wifi_settings.ap_pwd */
-    wifi_manager_send_message(WM_ORDER_START_AP, NULL);
+    wifi_manager_send_message(WM_ORDER_START_AP, nullptr);
     s_wifi_info.status = WIFI_STATUS_AP_MODE;
     strncpy(s_wifi_info.ssid, WIFI_AP_SSID, sizeof(s_wifi_info.ssid));
     strcpy(s_wifi_info.ip, DEFAULT_AP_IP);
@@ -157,7 +164,7 @@ esp_err_t wifi_start_ap_open(void)
     strncpy((char*)wifi_settings.ap_ssid, WIFI_AP_SSID, MAX_SSID_SIZE-1);
     wifi_settings.ap_ssid[MAX_SSID_SIZE-1] = '\0';
     memset(wifi_settings.ap_pwd, 0, MAX_PASSWORD_SIZE);
-    wifi_manager_send_message(WM_ORDER_START_AP, NULL);
+    wifi_manager_send_message(WM_ORDER_START_AP, nullptr);
     s_wifi_info.status = WIFI_STATUS_AP_MODE;
     strncpy(s_wifi_info.ssid, WIFI_AP_SSID, sizeof(s_wifi_info.ssid));
     strcpy(s_wifi_info.ip, DEFAULT_AP_IP);
@@ -180,7 +187,7 @@ esp_err_t wifi_connect(void)
 
 esp_err_t wifi_connect_to(const char *ssid, const char *password)
 {
-    if (ssid == NULL || strlen(ssid) == 0) {
+    if (ssid == nullptr || strlen(ssid) == 0) {
         return ESP_ERR_INVALID_ARG;
     }
     
@@ -191,7 +198,7 @@ esp_err_t wifi_connect_to(const char *ssid, const char *password)
 
     // Use vendor wifi-manager: copy credentials to its config and request connect
     wifi_config_t *cfg = wifi_manager_get_wifi_sta_config();
-    if (cfg == NULL) {
+    if (cfg == nullptr) {
         ESP_LOGW(TAG, "External wifi_manager config unavailable");
         return ESP_ERR_NO_MEM;
     }
@@ -206,7 +213,7 @@ esp_err_t wifi_connect_to(const char *ssid, const char *password)
     const TickType_t poll_delay = pdMS_TO_TICKS(500);
     const int max_loops = 30000 / 500; // 30s
     int loops = 0;
-    char *ipstr = NULL;
+    char *ipstr = nullptr;
     while (loops++ < max_loops) {
         vTaskDelay(poll_delay);
         ipstr = wifi_manager_get_sta_ip_string();
@@ -246,46 +253,41 @@ void wifi_get_info(wifi_info_t *info)
 
 int wifi_scan(char ssid_list[][33], int8_t *rssi_list, int max_networks)
 {
-    // We rely on the vendored manager's scan and JSON output. Keep a
-    // local scan_config for compatibility but mark it unused to silence
-    // warnings on some toolchains.
-    wifi_scan_config_t scan_config = {};
-    (void)scan_config;
-    /* Use vendor's JSON buffer to extract SSIDs and RSSI values. This is a lightweight parser. */
+    // Prefer the vendor's parsed data where available. The vendor exposes
+    // a JSON array; parse it robustly with cJSON to avoid brittle string
+    // parsing.
     char *json = wifi_manager_get_ap_list_json();
     if (!json || json[0] == '\0') return 0;
+
     int found = 0;
-    const char *p = json;
-    while (found < max_networks && (p = strstr(p, "\"ssid\"\:")) != NULL) {
-        p = strchr(p, '"');
-        if (!p) break;
-        p = strchr(p+1, '"');
-        if (!p) break;
-        p = p + 1; // move past '"'
-        if (*p == '"') p++; // guard
-        // find ssid opening
-        const char *start = strchr(p, '"');
-        if (!start) break;
-        start++;
-        const char *end = strchr(start, '"');
-        if (!end) break;
-        int len = end - start;
-        if (len > 32) len = 32;
-        strncpy(ssid_list[found], start, len);
-        ssid_list[found][len] = '\0';
-        // find rssi for this AP ("rssi":-xx)
-        const char *rssi_k = strstr(end, "\"rssi\"\:");
-        int rssi_val = 0;
-        if (rssi_k) {
-            rssi_k = strchr(rssi_k, ':');
-            if (rssi_k) {
-                rssi_val = atoi(rssi_k+1);
+    cJSON *root = cJSON_Parse(json);
+    if (!root) return 0;
+
+    if (cJSON_IsArray(root)) {
+        cJSON *item = NULL;
+        cJSON_ArrayForEach(item, root) {
+            if (found >= max_networks) break;
+            cJSON *ssid = cJSON_GetObjectItemCaseSensitive(item, "ssid");
+            cJSON *rssi = cJSON_GetObjectItemCaseSensitive(item, "rssi");
+
+            if (cJSON_IsString(ssid) && (ssid->valuestring != nullptr)) {
+                strncpy(ssid_list[found], ssid->valuestring, 32);
+                ssid_list[found][32] = '\0';
+            } else {
+                ssid_list[found][0] = '\0';
             }
+
+            if (cJSON_IsNumber(rssi)) {
+                rssi_list[found] = (int8_t)rssi->valueint;
+            } else {
+                rssi_list[found] = 0;
+            }
+
+            found++;
         }
-        rssi_list[found] = (int8_t)rssi_val;
-        found++;
-        p = end + 1;
     }
+
+    cJSON_Delete(root);
     return found;
 }
 
@@ -435,7 +437,7 @@ static esp_err_t http_get_captive(httpd_req_t *req);
 
 esp_err_t http_server_start(void)
 {
-    if (s_http_server != NULL) {
+    if (s_http_server != nullptr) {
         return ESP_OK;  // Already running
     }
     
@@ -516,7 +518,7 @@ void http_server_stop(void)
 {
     if (s_http_server) {
         httpd_stop(s_http_server);
-        s_http_server = NULL;
+        s_http_server = nullptr;
         ESP_LOGI(TAG, "HTTP server stopped");
     }
 }
@@ -679,7 +681,7 @@ static esp_err_t http_post_wifi(httpd_req_t *req)
                                              4096,
                                              args,
                                              configMAX_PRIORITIES - 1,
-                                             NULL);
+                                             nullptr);
             if (created != pdPASS) {
                 ESP_LOGW(TAG, "Could not create wifi_connect task");
                 free(args);
@@ -708,8 +710,8 @@ void wifi_connect_task(void *pvParameters)
     } wifi_conn_args_t;
 
     wifi_conn_args_t *args = (wifi_conn_args_t *)pvParameters;
-    if (args == NULL) {
-        vTaskDelete(NULL);
+    if (args == nullptr) {
+        vTaskDelete(nullptr);
         return;
     }
 
@@ -724,7 +726,7 @@ void wifi_connect_task(void *pvParameters)
     }
 
     free(args);
-    vTaskDelete(NULL);
+    vTaskDelete(nullptr);
 }
 
 static esp_err_t http_get_captive(httpd_req_t *req)

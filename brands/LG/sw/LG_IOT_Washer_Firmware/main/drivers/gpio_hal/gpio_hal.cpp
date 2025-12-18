@@ -1,5 +1,5 @@
 /*
- * gpio_hal.c
+ * gpio_hal.cpp
  * Hardware abstraction layer for GPIO, PWM (LEDC), and DAC
  *
  * Copyright 2025 Yusuf Emre Kenaroglu
@@ -18,6 +18,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "../../ulp/ulp_manager.h"
 
 static const char *TAG = "gpio_hal";
 static dac_oneshot_handle_t s_dac_handle = nullptr;
@@ -273,40 +274,54 @@ extern void handle_start_stop_long_press(void);
 
 void check_buttons(void)
 {
-    // Debounce door sensor with multiple reads
-    int door_count = 0;
-    for (int i = 0; i < 10; i++) {
-        door_count += gpio_read(PIN_DOOR_SENSOR);
-        vTaskDelay(pdMS_TO_TICKS(5));
-    }
-    machine_set_door_open(door_count > 0);
-    
-    // Check power button (with debounce)
-    if (gpio_read(PIN_POWER_BUTTON)) {
-        ESP_LOGI(TAG, "Power button press detected in check_buttons");
-        // Wait for release
-        while (gpio_read(PIN_POWER_BUTTON)) {
-            vTaskDelay(pdMS_TO_TICKS(BUTTON_DEBOUNCE_MS));
+    /* Non-blocking button handling using debounced levels from the ULP
+     * coprocessor. The ULP filters noise; here we only look for level
+     * transitions to generate short/long press events.
+     */
+    TickType_t now = xTaskGetTickCount();
+
+    // Door sensor: sample once, keep it simple and fast
+    int door_level = gpio_read(PIN_DOOR_SENSOR);
+    machine_set_door_open(door_level != 0);
+
+    static int last_power_state = 0;
+    static int last_start_state = 0;
+    static TickType_t start_press_tick = 0;
+
+    uint32_t mask = ulp_get_button_mask();
+
+    // POWER button (short press) – only reacts on rising edge
+    int power_state = static_cast<int>(ulp_button_level(0));
+    if (power_state != last_power_state) {
+        last_power_state = power_state;
+        if (power_state) {
+            ESP_LOGI(TAG, "Power button pressed (ULP filtered)");
+            handle_power_button();
         }
-        handle_power_button();
     }
-    
-    // Check start/stop button (with debounce)
-    if (gpio_read(PIN_START_STOP_BUTTON)) {
-        ESP_LOGI(TAG, "Start/Stop button press detected in check_buttons");
-        int held_ms = 0;
-        while (gpio_read(PIN_START_STOP_BUTTON)) {
-            vTaskDelay(pdMS_TO_TICKS(BUTTON_DEBOUNCE_MS));
-            held_ms += BUTTON_DEBOUNCE_MS;
-            if (held_ms >= 2000) {
-                handle_start_stop_long_press();
-                // wait for release to avoid duplicate events
-                while (gpio_read(PIN_START_STOP_BUTTON)) {
-                    vTaskDelay(pdMS_TO_TICKS(BUTTON_DEBOUNCE_MS));
+
+    // START/STOP button (short vs long press) gated by mask bit1
+    if (mask & 0x2) {
+        int start_state = static_cast<int>(ulp_button_level(1));
+        if (start_state != last_start_state) {
+            last_start_state = start_state;
+            if (start_state) {
+                start_press_tick = now;
+            } else {
+                uint32_t held_ms = (now - start_press_tick) * portTICK_PERIOD_MS;
+                if (held_ms >= 2000) {
+                    ESP_LOGI(TAG, "Start/Stop long press ( %u ms )", held_ms);
+                    handle_start_stop_long_press();
+                } else {
+                    ESP_LOGI(TAG, "Start/Stop short press ( %u ms )", held_ms);
+                    handle_start_stop_button();
                 }
-                return;
+                start_press_tick = 0;
             }
         }
-        handle_start_stop_button();
+    } else {
+        // Masked off: reset state to avoid stale long-press timing
+        last_start_state = 0;
+        start_press_tick = 0;
     }
 }

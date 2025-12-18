@@ -53,7 +53,7 @@ esp_err_t sound_init(void);
  * @brief Play a tone with specified frequency and duration
  * @param frequency Frequency in Hz (20-20000)
  * @param duration_ms Duration in milliseconds
- * @param envelope ADSR envelope to use (NULL for default)
+ * @param envelope ADSR envelope to use (nullptr for default)
  */
 void sound_play_tone(uint16_t frequency, uint16_t duration_ms, const adsr_envelope_t *envelope);
 

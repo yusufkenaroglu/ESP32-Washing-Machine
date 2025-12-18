@@ -1,5 +1,5 @@
 /*
- * sound.c
+ * sound.cpp
  * DAC-based sound generation with ADSR envelope
  *
  * Copyright 2025 Yusuf Emre Kenaroglu
@@ -97,8 +97,8 @@ static const uint8_t sine_table[256] = {
 static volatile bool s_playing = false;
 static volatile bool s_stop_requested = false;
 static uint8_t s_volume = 255;  // Master volume (0-255)
-static SemaphoreHandle_t s_sound_mutex = NULL;
-static TaskHandle_t s_sound_task_handle = NULL;
+static SemaphoreHandle_t s_sound_mutex = nullptr;
+static TaskHandle_t s_sound_task_handle = nullptr;
 static dac_oneshot_handle_t s_dac_handle = nullptr;
 
 // Current tone parameters
@@ -179,7 +179,7 @@ static void play_sequence_task(void *arg)
     }
     
     free(seq);
-    vTaskDelete(NULL);
+    vTaskDelete(nullptr);
 }
 
 static void spawn_sequence(const float *freqs, const int *durs, const float *start_amps, const float *end_amps, int count, int repeat)
@@ -193,7 +193,7 @@ static void spawn_sequence(const float *freqs, const int *durs, const float *sta
         seq->count = count;
         seq->repeat = repeat;
         
-        xTaskCreate(play_sequence_task, "snd_seq", 2048, seq, 5, NULL);
+        xTaskCreate(play_sequence_task, "snd_seq", 2048, seq, 5, nullptr);
     }
 }
 
@@ -316,7 +316,7 @@ esp_err_t sound_init(void)
 {
     // Create mutex
     s_sound_mutex = xSemaphoreCreateMutex();
-    if (s_sound_mutex == NULL) {
+    if (s_sound_mutex == nullptr) {
         ESP_LOGE(TAG, "Failed to create mutex");
         return ESP_FAIL;
     }
@@ -335,7 +335,7 @@ esp_err_t sound_init(void)
         sound_task,
         "sound_task",
         4096,
-        NULL,
+            nullptr,
         configMAX_PRIORITIES - 1,  // High priority
         &s_sound_task_handle,
         0  // Pin to core 0
@@ -367,7 +367,7 @@ void sound_play_tone(uint16_t frequency, uint16_t duration_ms, const adsr_envelo
     s_frequency = frequency;
     s_duration_ms = duration_ms;
     
-    if (envelope != NULL) {
+    if (envelope != nullptr) {
         memcpy(&s_envelope, envelope, sizeof(adsr_envelope_t));
     } else {
         memcpy(&s_envelope, &ADSR_BEEP, sizeof(adsr_envelope_t));
@@ -376,7 +376,7 @@ void sound_play_tone(uint16_t frequency, uint16_t duration_ms, const adsr_envelo
     xSemaphoreGive(s_sound_mutex);
     
     // Notify sound task
-    if (s_sound_task_handle != NULL) {
+    if (s_sound_task_handle != nullptr) {
         xTaskNotifyGive(s_sound_task_handle);
     }
 }

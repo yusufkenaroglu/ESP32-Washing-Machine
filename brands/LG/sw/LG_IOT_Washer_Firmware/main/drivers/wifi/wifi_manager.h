@@ -143,7 +143,7 @@ void http_server_stop(void);
 
 /**
  * @brief Get HTTP server handle
- * @return Server handle or NULL
+ * @return Server handle or nullptr
  */
 httpd_handle_t http_server_get_handle(void);
 

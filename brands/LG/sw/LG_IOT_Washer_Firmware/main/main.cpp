@@ -119,20 +119,34 @@ static inline void init_simulator_hooks(void) {}
 extern "C" void app_main(void)
 {   
     ESP_LOGI(TAG, "Booting LG washer controller");
-
-#if !CONFIG_SIMULATOR_MODE
+    /*
+     * Important: if we load the ULP binary before reading the edge counter
+     * the ULP initialization will zero the RTC variables (because
+     * `ulp_load_binary` reinitializes the ULP memory). Read the wakeup
+     * counters first when waking from ULP so we can mirror the button
+     * press into the main event flow.
+     */
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     s_woke_from_ulp = (cause == ESP_SLEEP_WAKEUP_ULP);
-    ESP_ERROR_CHECK(ulp_power_init(PIN_POWER_BUTTON, 1, 3, 20000));
+
     if (s_woke_from_ulp) {
+        /* Read the counter before loading/initializing the ULP binary. */
         s_ulp_edge_count = ulp_power_edge_count();
         ulp_power_clear_counters();
         ESP_LOGI(TAG, "Wake source: ULP power button (edges=%" PRIu32 ")", s_ulp_edge_count);
-    } else {
+    }
+
+    /* Only power button enabled while machine is off */
+    ESP_ERROR_CHECK(ulp_set_button_mask(0x1));
+
+    /* Now initialise the ULP manager (this will load the binary and
+     * prepare the ULP for normal operation). */
+    ESP_ERROR_CHECK(ulp_power_init(PIN_POWER_BUTTON, PIN_START_STOP_BUTTON, 1, 3, 20000));
+
+    if (!s_woke_from_ulp) {
         ESP_LOGI(TAG, "Machine is off; arming ULP and entering deep sleep");
         ESP_ERROR_CHECK(ulp_power_enter_deep_sleep());
     }
-#endif
 
     init_nvs();
     ESP_ERROR_CHECK(esp_event_loop_create_default());  
@@ -157,16 +171,13 @@ extern "C" void app_main(void)
     init_simulator_hooks();
 
     ESP_ERROR_CHECK(tasks_create_all());
-
-#if !CONFIG_SIMULATOR_MODE
     // Keep the ULP program running so we can re-enter deep sleep when powering off
+
     ESP_ERROR_CHECK(ulp_power_arm());
     if (s_woke_from_ulp && s_ulp_edge_count > 0) {
         // Mirror a power-button press into the existing event flow
         tasks_post_simple_event(WM_EVENT_POWER_BUTTON, 0);
     }
-#endif
- 
     ESP_LOGI(TAG, "Main task idling; control plane active");
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(1000)); 

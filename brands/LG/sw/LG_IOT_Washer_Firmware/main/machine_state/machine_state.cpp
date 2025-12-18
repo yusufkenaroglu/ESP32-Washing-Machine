@@ -1,11 +1,10 @@
 /*
- * machine_state.c
+ * machine_state.cpp
  * Global machine state variables and initialization
  *
  * Copyright 2025 Yusuf Emre Kenaroglu
  * SPDX-License-Identifier: Apache-2.0
  */
-#
 /*
  * Why this module holds global state:
  * - Centralising machine state and observer notifications simplifies
@@ -40,7 +39,7 @@ static program_state_t program_state;
 static system_state_t system_state;
 static machine_state_observer_t observers[4] = {0};
 
-static SemaphoreHandle_t state_mutex = NULL;
+static SemaphoreHandle_t state_mutex = nullptr;
 
 #if CONFIG_SIMULATOR_MODE
 static inline void snapshot_motor_state(int *target_rpm, float *current_rpm, bool *direction_ccw)
@@ -61,7 +60,7 @@ static inline void snapshot_motor_state(int *target_rpm, float *current_rpm, boo
 esp_err_t machine_state_init(void)
 {
     state_mutex = xSemaphoreCreateMutex();
-    if (state_mutex == NULL) {
+    if (state_mutex == nullptr) {
         ESP_LOGE(TAG, "Failed to create state mutex");
         return ESP_FAIL;
     }
@@ -109,7 +108,7 @@ esp_err_t machine_state_init(void)
  *===========================================================================*/
 
 #define LOCK_STATE()                              \
-    if (state_mutex == NULL) {                    \
+    if (state_mutex == nullptr) {                    \
         return;                                  \
     }                                             \
     xSemaphoreTake(state_mutex, portMAX_DELAY)
@@ -146,7 +145,7 @@ static void notify_observers(void)
 
 bool machine_register_observer(machine_state_observer_t cb)
 {
-    if (!cb || state_mutex == NULL) {
+    if (!cb || state_mutex == nullptr) {
         return false;
     }
     xSemaphoreTake(state_mutex, portMAX_DELAY);
@@ -197,7 +196,7 @@ void machine_get_observable_state(machine_observable_state_t *out_state)
 }
 
 #define LOCK_STATE_RET(ret_val)                   \
-    if (state_mutex == NULL) {                    \
+    if (state_mutex == nullptr) {                    \
         return ret_val;                           \
     }                                             \
     xSemaphoreTake(state_mutex, portMAX_DELAY)

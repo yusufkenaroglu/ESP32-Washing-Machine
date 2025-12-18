@@ -102,7 +102,7 @@ void dac_output(uint8_t value);
 
 /**
  * @brief Retrieve underlying DAC oneshot handle
- * @return Handle created during app_dac_init (NULL if not initialized)
+ * @return Handle created during app_dac_init (nullptr if not initialized)
  */
 dac_oneshot_handle_t gpio_hal_get_dac_handle(void);
 
