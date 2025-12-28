@@ -81,21 +81,8 @@ You're welcome to explore, fork, improve, or ask questions.
 
 ---
 
-## 🚧 Open Source — Still in Progress
 
-This is my first time releasing this project publicly.
-
-The code, organization, and documentation are **not yet where I want them to be**.  
-I'm publishing early to:
-- Invite others into the development process
-- Help those who asked for the code
-- Share what I've learned, even if it's not perfect
-
-You're welcome to explore, fork, improve, or ask questions.
-
----
-
-## ⚙️ Hardware Overview (Not exhaustive)
+## Hardware Overview (Not exhaustive)
 
 | Component         | Description                                 |
 |-------------------|---------------------------------------------|
@@ -107,7 +94,7 @@ You're welcome to explore, fork, improve, or ask questions.
 
 ---
 
-## 📜 Trademark Disclaimer
+## Trademark Disclaimer
 
 This project is an independent, non-commercial initiative that modifies **scale model** and/or **toy washing machines** for experimental and hobby purposes.
 
